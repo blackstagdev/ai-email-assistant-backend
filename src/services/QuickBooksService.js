@@ -72,7 +72,7 @@ class QuickBooksService {
   }
 
   // Get valid access token
-  private static async getValidAccessToken(userId) { token: string; realmId: string }> {
+  private static async getValidAccessToken(userId) {
     const config = await this.getConfig(userId);
 
     // Refresh if expired or expires in < 10 minutes
@@ -254,7 +254,8 @@ class QuickBooksService {
 
         const contact = await ContactService.findOrCreateByEmail(userId, email);
 
-        // Record payment(
+        // Record payment as interaction
+        await query(
           `INSERT INTO interactions (
             contact_id, user_id, platform, interaction_type,
             subject, content, occurred_at

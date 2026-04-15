@@ -44,10 +44,10 @@ class SlackService {
 
     const response = await axios.post(`${this.BASE_URL}/oauth.v2.access`, null, {
       params: {
-        client_id,
-        client_secret,
+        client_id: clientId,
+        client_secret: clientSecret,
         code,
-        redirect_uri,
+        redirect_uri: redirectUri,
       },
     });
 
@@ -82,14 +82,14 @@ class SlackService {
   static async getConversationHistory(
     userId,
     channelId,
-    options: { oldest?: string; latest?: string } = {}
+    options?: string; latest?: string } = {}
   ) {
     const config = await this.getConfig(userId);
     const client = this.getClient(config.accessToken);
 
     const response = await client.get('/conversations.history', {
       params: {
-        channel,
+        channel: channelId,
         limit: 1000,
         ...options,
       },
@@ -101,7 +101,7 @@ class SlackService {
   // Sync Slack messages
   static async syncMessages(
     userId,
-    options: { sinceTimestamp?: string } = {}
+    options?: string } = {}
   ) {
     const config = await this.getConfig(userId);
     const client = this.getClient(config.accessToken);
@@ -157,7 +157,8 @@ class SlackService {
             }
           );
 
-          // Store message(
+          // Store message as interaction
+          await query(
             `INSERT INTO interactions (
               contact_id, user_id, platform, interaction_type,
               content, occurred_at

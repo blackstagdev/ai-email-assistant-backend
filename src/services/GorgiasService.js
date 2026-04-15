@@ -42,7 +42,7 @@ class GorgiasService {
   // Sync tickets from Gorgias
   static async syncTickets(
     userId,
-    options: { sinceDate?: Date; limit?: number } = {}
+    options?: Date; limit?: number } = {}
   ) {
     const config = await this.getConfig(userId);
     const client = this.getClient(config);
@@ -88,7 +88,7 @@ class GorgiasService {
             'gorgias',
             ticket.customer.id.toString(),
             {
-              email,
+              email: customerEmail,
               rawData: ticket.customer,
             }
           );
@@ -136,7 +136,8 @@ class GorgiasService {
             ]
           );
 
-          // Store ticket messages(ticket.messages && ticket.messages.length > 0) {
+          // Store ticket messages as interactions
+          if (ticket.messages && ticket.messages.length > 0) {
             for (const message of ticket.messages) {
               // Analyze message with AI
               const analysis = await AIService.analyzeEmail(message.body_text || message.body_html || '');
@@ -203,7 +204,7 @@ class GorgiasService {
 
     const payload = {
       message: {
-        body_text,
+        body_text: message,
         channel: 'api',
       },
     };
@@ -216,7 +217,7 @@ class GorgiasService {
   static async updateTicketStatus(
     userId,
     ticketId,
-    status: 'open' | 'closed' | 'pending'
+    status'open' | 'closed' | 'pending'
   ) {
     const config = await this.getConfig(userId);
     const client = this.getClient(config);
@@ -236,9 +237,9 @@ class GorgiasService {
     const client = this.getClient(config);
 
     const webhook = {
-      url,
-      events,
-      actions,
+      url: callbackUrl,
+      events: [event],
+      actions: [],
     };
 
     const response = await client.post('/integrations/webhooks', webhook);
@@ -270,10 +271,10 @@ class GorgiasService {
   static async getSatisfactionMetrics(userId) {
     const result = await query(
       `SELECT 
-        COUNT(*)_tickets,
-        AVG(satisfaction_score)_satisfaction,
-        COUNT(CASE WHEN satisfaction_score >= 4 THEN 1 END)_count,
-        COUNT(CASE WHEN satisfaction_score <= 2 THEN 1 END)_count
+        COUNT(*) as total_tickets,
+        AVG(satisfaction_score) as avg_satisfaction,
+        COUNT(CASE WHEN satisfaction_score >= 4 THEN 1 END) as positive_count,
+        COUNT(CASE WHEN satisfaction_score <= 2 THEN 1 END) as negative_count
        FROM support_tickets
        WHERE user_id = $1 AND platform = 'gorgias' AND satisfaction_score IS NOT NULL`,
       [userId]

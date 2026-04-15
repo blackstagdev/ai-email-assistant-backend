@@ -38,7 +38,7 @@ class ShopifyService {
   }
 
   // Sync customers from Shopify
-  static async syncCustomers(userId, options: { sinceDate?: Date } = {}) {
+  static async syncCustomers(userId, options?: Date } = {}) {
     const config = await this.getConfig(userId);
     const client = this.getClient(config);
 
@@ -66,7 +66,7 @@ class ShopifyService {
             firstName: customer.first_name,
             lastName: customer.last_name,
             phone: customer.phone,
-            tags: customer.tags ? customer.tags.split(',').map((t) => t.trim()) : [],
+            tags: customer.tags ? customer.tags.split(',').map((t: string) => t.trim()) : [],
           });
 
           // Link Shopify identity
@@ -121,7 +121,7 @@ class ShopifyService {
   }
 
   // Sync orders from Shopify
-  static async syncOrders(userId, options: { sinceDate?: Date } = {}) {
+  static async syncOrders(userId, options?: Date } = {}) {
     const config = await this.getConfig(userId);
     const client = this.getClient(config);
 
@@ -174,7 +174,7 @@ class ShopifyService {
               new Date(order.created_at),
               parseFloat(order.total_price),
               JSON.stringify(
-                order.line_items.map((item) => ({
+                order.line_items.map((item: any) => ({
                   name: item.name,
                   quantity: item.quantity,
                   price: item.price,
@@ -237,7 +237,7 @@ class ShopifyService {
     const webhook = {
       webhook: {
         topic,
-        address,
+        address: callbackUrl,
         format: 'json',
       },
     };

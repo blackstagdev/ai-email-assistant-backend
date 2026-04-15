@@ -19,7 +19,7 @@ pool.on('error', (err) => {
   process.exit(-1);
 });
 
-const query = async (text, params?: any[]) => {
+const query = async (text: string, params?: any[]) => {
   const start = Date.now();
   try {
     const res = await pool.query(text, params);
@@ -32,9 +32,12 @@ const query = async (text, params?: any[]) => {
   }
 };
 
-const getClient = async (): Promise => {
+const getClient = async (): Promise<PoolClient> => {
   const client = await pool.connect();
   return client;
 };
 
 export default pool;
+
+
+module.exports = { query, getClient };

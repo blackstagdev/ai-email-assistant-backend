@@ -24,7 +24,7 @@ const loginSchema = z.object({
 });
 
 // POST /api/auth/register
-router.post('/register', async (req, res) => {
+router.post('/register', async (req: Request, res: Response) => {
   try {
     const { email, password, firstName, lastName } = registerSchema.parse(req.body);
 
@@ -77,7 +77,7 @@ router.post('/register', async (req, res) => {
 });
 
 // POST /api/auth/login
-router.post('/login', async (req, res) => {
+router.post('/login', async (req: Request, res: Response) => {
   try {
     const { email, password } = loginSchema.parse(req.body);
 
@@ -124,7 +124,7 @@ router.post('/login', async (req, res) => {
 });
 
 // GET /api/auth/me
-router.get('/me', async (req, res) => {
+router.get('/me', async (req: Request, res: Response) => {
   try {
     // This would normally use authMiddleware, but showing the pattern here
     const authHeader = req.headers.authorization;

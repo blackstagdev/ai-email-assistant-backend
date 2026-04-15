@@ -7,18 +7,16 @@ const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
 
 
 
-export interface AuthRequest extends Request {
-  user?: JWTPayload;
-}
 
-const hashPassword = async (password): Promise => {
+
+const hashPassword = async (password): Promise<string> => {
   const salt = await bcrypt.genSalt(10);
   return bcrypt.hash(password, salt);
 };
 
 const comparePassword = async (
   password,
-  hashedPassword): Promise => {
+  hashedPassword): Promise<boolean> => {
   return bcrypt.compare(password, hashedPassword);
 };
 
@@ -31,9 +29,10 @@ const verifyToken = (token): JWTPayload => {
 };
 
 const authMiddleware = async (
-  req,
-  res,
-  next) => {
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const authHeader = req.headers.authorization;
     
@@ -50,3 +49,6 @@ const authMiddleware = async (
     return res.status(401).json({ error: 'Invalid token' });
   }
 };
+
+
+module.exports = { hashPassword, comparePassword, generateToken, verifyToken, authMiddleware };

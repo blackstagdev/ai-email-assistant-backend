@@ -28,7 +28,7 @@ const updateContactSchema = createContactSchema.extend({
 }).partial();
 
 // GET /api/contacts - List all contacts with pagination and filtering
-router.get('/', async (req, res) => {
+router.get('/', async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user!.userId;
     const {
@@ -41,8 +41,8 @@ router.get('/', async (req, res) => {
     const result = await ContactService.getContactsByUser(userId, {
       limit: parseInt(limit),
       offset: parseInt(offset),
-      search,
-      relationshipType,
+      search: search,
+      relationshipType: relationshipType,
     });
 
     res.json({
@@ -58,7 +58,7 @@ router.get('/', async (req, res) => {
 });
 
 // GET /api/contacts/search - Search contacts
-router.get('/search', async (req, res) => {
+router.get('/search', async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user!.userId;
     const { q } = req.query;
@@ -76,7 +76,7 @@ router.get('/search', async (req, res) => {
 });
 
 // GET /api/contacts/:id - Get single contact with full details
-router.get('/:id', async (req, res) => {
+router.get('/:id', async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user!.userId;
     const { id } = req.params;
@@ -101,7 +101,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // POST /api/contacts - Create new contact
-router.post('/', async (req, res) => {
+router.post('/', async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user!.userId;
     const data = createContactSchema.parse(req.body);
@@ -119,7 +119,7 @@ router.post('/', async (req, res) => {
 });
 
 // PUT /api/contacts/:id - Update contact
-router.put('/:id', async (req, res) => {
+router.put('/:id', async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user!.userId;
     const { id } = req.params;
@@ -142,7 +142,7 @@ router.put('/:id', async (req, res) => {
 });
 
 // DELETE /api/contacts/:id - Delete contact
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user!.userId;
     const { id } = req.params;
@@ -161,7 +161,7 @@ router.delete('/:id', async (req, res) => {
 });
 
 // GET /api/contacts/:id/interactions - Get contact's interaction history
-router.get('/:id/interactions', async (req, res) => {
+router.get('/:id/interactions', async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user!.userId;
     const { id } = req.params;
@@ -191,7 +191,7 @@ router.get('/:id/interactions', async (req, res) => {
 });
 
 // GET /api/contacts/:id/timeline - Get unified timeline of all activity
-router.get('/:id/timeline', async (req, res) => {
+router.get('/:id/timeline', async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user!.userId;
     const { id } = req.params;
@@ -207,13 +207,15 @@ router.get('/:id/timeline', async (req, res) => {
     // Get all activity types for this contact
     const interactions = await query(
       `SELECT id, platform, interaction_type, subject, occurred_at, 
-              'interaction'_id = $1`,
+              'interaction' as category
+       FROM interactions WHERE contact_id = $1`,
       [id]
     );
 
     const orders = await query(
       `SELECT id, platform, order_total, order_date,
-              'order'_data WHERE contact_id = $1`,
+              'order' as category
+       FROM commerce_data WHERE contact_id = $1`,
       [id]
     );
 

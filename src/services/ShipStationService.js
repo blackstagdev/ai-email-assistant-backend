@@ -42,7 +42,7 @@ class ShipStationService {
   // Sync shipments from ShipStation
   static async syncShipments(
     userId,
-    options: { sinceDate?: Date } = {}
+    options?: Date } = {}
   ) {
     const config = await this.getConfig(userId);
     const client = this.getClient(config);
@@ -105,7 +105,8 @@ class ShipStationService {
             ]
           );
 
-          // Store shipping event(
+          // Store shipping event as interaction
+          await query(
             `INSERT INTO interactions (
               contact_id, user_id, platform, interaction_type,
               subject, content, occurred_at
@@ -176,9 +177,9 @@ class ShipStationService {
     const client = this.getClient(config);
 
     const webhook = {
-      target_url,
+      target_url: callbackUrl,
       event,
-      store_id, // null subscribes to all stores
+      store_id: null, // null subscribes to all stores
       friendly_name: `AI Assistant - ${event}`,
     };
 

@@ -91,8 +91,8 @@ class GoogleAdsService {
             'google_ads_conversion',
             JSON.stringify({
               gclid,
-              campaign,
-              conversion_value,
+              campaign: campaignName,
+              conversion_value: conversionValue,
               conversion_action: result.segments?.conversionActionName,
             }),
             new Date(date),
@@ -192,10 +192,10 @@ class MetaAdsService {
         for (const lead of leads) {
           // Extract email and name from field_data
           const fieldData = lead.field_data || [];
-          const emailField = fieldData.find((f) => f.name === 'email');
-          const firstNameField = fieldData.find((f) => f.name === 'first_name');
-          const lastNameField = fieldData.find((f) => f.name === 'last_name');
-          const phoneField = fieldData.find((f) => f.name === 'phone');
+          const emailField = fieldData.find((f: any) => f.name === 'email');
+          const firstNameField = fieldData.find((f: any) => f.name === 'first_name');
+          const lastNameField = fieldData.find((f: any) => f.name === 'last_name');
+          const phoneField = fieldData.find((f: any) => f.name === 'phone');
 
           if (!emailField?.values?.[0]) continue;
 

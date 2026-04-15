@@ -14,7 +14,7 @@ const { query } = require('../db');
 const connection = new IORedis({
   host: process.env.REDIS_HOST || 'localhost',
   port: parseInt(process.env.REDIS_PORT || '6379'),
-  maxRetriesPerRequest,
+  maxRetriesPerRequest: null,
 });
 
 // Create job queues
@@ -26,7 +26,7 @@ const syncQueue = new Queue('platform-sync', { connection });
 // Worker to process sync jobs
 const syncWorker = new Worker(
   'platform-sync',
-  async (job) => {
+  async (job: Job) => {
     const { userId, platform, sinceDate } = job.data;
 
     console.log(`Processing sync job for user ${userId}, platform: ${platform}`);
@@ -35,29 +35,29 @@ const syncWorker = new Worker(
       switch (platform) {
         case 'microsoft':
           await MicrosoftService.syncEmails(userId, {
-            sinceDate: sinceDate ? new Date(sinceDate) : undefined,
+            sinceDate? new Date(sinceDate) : undefined,
             maxResults: 100,
           });
           break;
 
         case 'shopify':
           await ShopifyService.syncCustomers(userId, {
-            sinceDate: sinceDate ? new Date(sinceDate) : undefined,
+            sinceDate? new Date(sinceDate) : undefined,
           });
           await ShopifyService.syncOrders(userId, {
-            sinceDate: sinceDate ? new Date(sinceDate) : undefined,
+            sinceDate? new Date(sinceDate) : undefined,
           });
           break;
 
         case 'gorgias':
           await GorgiasService.syncTickets(userId, {
-            sinceDate: sinceDate ? new Date(sinceDate) : undefined,
+            sinceDate? new Date(sinceDate) : undefined,
           });
           break;
 
         case 'shipstation':
           await ShipStationService.syncShipments(userId, {
-            sinceDate: sinceDate ? new Date(sinceDate) : undefined,
+            sinceDate? new Date(sinceDate) : undefined,
           });
           break;
 
@@ -69,7 +69,7 @@ const syncWorker = new Worker(
 
         case 'clickup':
           await ClickUpService.syncTasks(userId, {
-            sinceDate: sinceDate ? new Date(sinceDate) : undefined,
+            sinceDate? new Date(sinceDate) : undefined,
           });
           break;
 
@@ -112,7 +112,8 @@ const syncWorker = new Worker(
       console.log(`✅ Completed sync for user ${userId}, platform: ${platform}`);
     } catch (error) {
       console.error(`❌ Sync failed for user ${userId}, platform: ${platform}`, error);
-      throw error; // This will mark the job}
+      throw error; // This will mark the job as failed and trigger retry
+    }
   },
   {
     connection,
@@ -136,7 +137,7 @@ syncWorker.on('failed', (job, err) => {
 async function scheduleSyncJob(
   userId,
   platform,
-  options: { sinceDate?: Date; delay?: number } = {}
+  options?: Date; delay?: number } = {}
 ) {
   await syncQueue.add(
     'sync',
@@ -190,3 +191,6 @@ async function scheduleRecurringSyncs() {
 scheduleRecurringSyncs().catch(console.error);
 
 export default syncWorker;
+
+
+module.exports = { syncQueue, scheduleSyncJob, scheduleRecurringSyncs };

@@ -2,7 +2,7 @@ const { Router, Response } = require('express');
 const { AuthRequest, authMiddleware } = require('../middleware/auth');
 const { query } = require('../db');
 const { MicrosoftService } = require('../services/MicrosoftService');
-const { v44 } = require('uuid');
+const { v4 as uuidv4 } = require('uuid');
 
 const router = Router();
 
@@ -10,7 +10,7 @@ const router = Router();
 router.use(authMiddleware);
 
 // GET /api/integrations - List all integrations and their connection status
-router.get('/', async (req, res) => {
+router.get('/', async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user!.userId;
 
@@ -57,7 +57,7 @@ router.get('/', async (req, res) => {
 
 // Microsoft 365 OAuth Flow
 // GET /api/integrations/microsoft/connect - Initiate OAuth
-router.get('/microsoft/connect', async (req, res) => {
+router.get('/microsoft/connect', async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user!.userId;
     const state = uuidv4(); // Used to prevent CSRF
@@ -76,7 +76,7 @@ router.get('/microsoft/connect', async (req, res) => {
 });
 
 // GET /api/integrations/microsoft/callback - OAuth callback
-router.get('/microsoft/callback', async (req, res) => {
+router.get('/microsoft/callback', async (req: AuthRequest, res: Response) => {
   try {
     const { code, state, error } = req.query;
 
@@ -141,7 +141,7 @@ router.get('/microsoft/callback', async (req, res) => {
 const axios = require('axios');
 
 // POST /api/integrations/microsoft/sync - Manually trigger sync
-router.post('/microsoft/sync', async (req, res) => {
+router.post('/microsoft/sync', async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user!.userId;
 
@@ -167,7 +167,7 @@ router.post('/microsoft/sync', async (req, res) => {
 });
 
 // DELETE /api/integrations/:platform - Disconnect integration
-router.delete('/:platform', async (req, res) => {
+router.delete('/:platform', async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user!.userId;
     const { platform } = req.params;
@@ -187,7 +187,7 @@ router.delete('/:platform', async (req, res) => {
 });
 
 // GET /api/integrations/microsoft/onedrive/files - List OneDrive files
-router.get('/microsoft/onedrive/files', async (req, res) => {
+router.get('/microsoft/onedrive/files', async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user!.userId;
     const { folderId } = req.query;
@@ -204,7 +204,7 @@ router.get('/microsoft/onedrive/files', async (req, res) => {
 });
 
 // GET /api/integrations/microsoft/onedrive/search - Search OneDrive files
-router.get('/microsoft/onedrive/search', async (req, res) => {
+router.get('/microsoft/onedrive/search', async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user!.userId;
     const { q } = req.query;

@@ -43,8 +43,8 @@ class GoHighLevelService {
     const clientSecret = process.env.GHL_CLIENT_SECRET;
 
     const response = await axios.post('https://services.leadconnectorhq.com/oauth/token', {
-      client_id,
-      client_secret,
+      client_id: clientId,
+      client_secret: clientSecret,
       grant_type: 'authorization_code',
       code,
     });
@@ -158,7 +158,8 @@ class GoHighLevelService {
           opp.contact.email
         );
 
-        // Store(
+        // Store as financial data
+        await query(
           `INSERT INTO financial_data (
             contact_id, user_id, platform, invoice_id,
             invoice_date, amount, payment_status

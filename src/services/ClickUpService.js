@@ -43,8 +43,8 @@ class ClickUpService {
 
     const response = await axios.post('https://api.clickup.com/api/v2/oauth/token', null, {
       params: {
-        client_id,
-        client_secret,
+        client_id: clientId,
+        client_secret: clientSecret,
         code,
       },
     });
@@ -62,7 +62,7 @@ class ClickUpService {
   // Sync tasks from ClickUp
   static async syncTasks(
     userId,
-    options: { sinceDate?: Date } = {}
+    options?: Date } = {}
   ) {
     const config = await this.getConfig(userId);
     const client = this.getClient(config.accessToken);
@@ -80,8 +80,8 @@ class ClickUpService {
         try {
           // Get tasks in list
           const params = {
-            archived,
-            subtasks,
+            archived: false,
+            subtasks: true,
           };
 
           if (options.sinceDate) {
@@ -115,7 +115,7 @@ class ClickUpService {
                 {
                   email,
                   username: assignee.username,
-                  rawData,
+                  rawData: assignee,
                 }
               );
 
@@ -147,7 +147,8 @@ class ClickUpService {
                 ]
               );
 
-              // Store task comments(task.id) {
+              // Store task comments as interactions
+              if (task.id) {
                 const commentsResponse = await client.get(`/task/${task.id}/comment`);
                 const comments = commentsResponse.data.comments || [];
 
@@ -231,7 +232,7 @@ class ClickUpService {
     const client = this.getClient(config.accessToken);
 
     const response = await client.post(`/task/${taskId}/comment`, {
-      comment_text,
+      comment_text: comment,
     });
     return response.data;
   }

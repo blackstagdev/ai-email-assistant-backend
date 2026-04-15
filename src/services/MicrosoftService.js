@@ -30,7 +30,7 @@ class MicrosoftService {
       client_id: clientId!,
       response_type: 'code',
       redirect_uri: redirectUri!,
-      scope,
+      scope: scopes,
       state,
       response_mode: 'query',
     });
@@ -80,7 +80,7 @@ class MicrosoftService {
     const params = new URLSearchParams({
       client_id: clientId!,
       client_secret: clientSecret!,
-      refresh_token,
+      refresh_token: refreshToken,
       grant_type: 'refresh_token',
     });
 
@@ -139,7 +139,7 @@ class MicrosoftService {
   // Sync emails from Outlook
   static async syncEmails(
     userId,
-    options: { sinceDate?: Date; maxResults?: number } = {}
+    options?: Date; maxResults?: number } = {}
   ) {
     const accessToken = await this.getValidAccessToken(userId);
     const { sinceDate, maxResults = 50 } = options;
@@ -178,8 +178,8 @@ class MicrosoftService {
           'microsoft',
           email.from.emailAddress.address,
           {
-            email,
-            username,
+            email: senderEmail,
+            username: senderName,
             rawData: email.from,
           }
         );
@@ -229,8 +229,7 @@ class MicrosoftService {
     to,
     subject,
     body,
-    options: {
-      cc?: string[];
+    options?: string[];
       bcc?: string[];
       attachments?: any[];
     } = {}
@@ -241,7 +240,7 @@ class MicrosoftService {
       subject,
       body: {
         contentType: 'HTML',
-        content,
+        content: body,
       },
       toRecipients: to.map(email => ({
         emailAddress: { address: email },
@@ -324,10 +323,10 @@ class MicrosoftService {
 
     const subscription = {
       changeType: 'created',
-      notificationUrl,
+      notificationUrl: callbackUrl,
       resource: '/me/messages',
       expirationDateTime: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 days max
-      clientState, // For validation
+      clientState: userId, // For validation
     };
 
     const response = await axios.post(

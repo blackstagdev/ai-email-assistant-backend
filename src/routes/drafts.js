@@ -29,7 +29,7 @@ const rewriteDraftSchema = z.object({
 });
 
 // GET /api/drafts - List all draft emails
-router.get('/', async (req, res) => {
+router.get('/', async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user!.userId;
     const { status = 'pending', limit = '50', offset = '0' } = req.query;
@@ -52,7 +52,7 @@ router.get('/', async (req, res) => {
 });
 
 // GET /api/drafts/:id - Get single draft
-router.get('/:id', async (req, res) => {
+router.get('/:id', async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user!.userId;
     const { id } = req.params;
@@ -77,7 +77,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // POST /api/drafts/generate - Generate new AI draft
-router.post('/generate', async (req, res) => {
+router.post('/generate', async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user!.userId;
     const data = generateDraftSchema.parse(req.body);
@@ -127,7 +127,7 @@ router.post('/generate', async (req, res) => {
 });
 
 // PUT /api/drafts/:id/approve - Approve draft (optionally with edits)
-router.put('/:id/approve', async (req, res) => {
+router.put('/:id/approve', async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user!.userId;
     const { id } = req.params;
@@ -159,7 +159,7 @@ router.put('/:id/approve', async (req, res) => {
 });
 
 // PUT /api/drafts/:id/reject - Reject draft with feedback
-router.put('/:id/reject', async (req, res) => {
+router.put('/:id/reject', async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user!.userId;
     const { id } = req.params;
@@ -190,7 +190,7 @@ router.put('/:id/reject', async (req, res) => {
 });
 
 // POST /api/drafts/:id/rewrite - Request AI to rewrite with feedback
-router.post('/:id/rewrite', async (req, res) => {
+router.post('/:id/rewrite', async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user!.userId;
     const { id } = req.params;
@@ -256,14 +256,14 @@ router.post('/:id/rewrite', async (req, res) => {
 });
 
 // POST /api/drafts/:id/send - Send approved draft via email
-router.post('/:id/send', async (req, res) => {
+router.post('/:id/send', async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user!.userId;
     const { id } = req.params;
 
     // Get draft
     const draftResult = await query(
-      `SELECT d.*, c.email_email
+      `SELECT d.*, c.email as contact_email
        FROM draft_emails d
        JOIN contacts c ON d.contact_id = c.id
        WHERE d.id = $1 AND d.user_id = $2 AND d.status = 'approved'`,
@@ -288,7 +288,8 @@ router.post('/:id/send', async (req, res) => {
       finalBody
     );
 
-    // Mark(
+    // Mark as sent
+    await query(
       `UPDATE draft_emails
        SET status = 'sent',
            sent_at = CURRENT_TIMESTAMP,
@@ -297,7 +298,8 @@ router.post('/:id/send', async (req, res) => {
       [id]
     );
 
-    // Record(
+    // Record as interaction
+    await query(
       `INSERT INTO interactions (
         contact_id, user_id, platform, interaction_type, direction,
         subject, content, occurred_at
@@ -313,7 +315,7 @@ router.post('/:id/send', async (req, res) => {
 });
 
 // DELETE /api/drafts/:id - Delete draft
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user!.userId;
     const { id } = req.params;

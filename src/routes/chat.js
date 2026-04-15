@@ -19,30 +19,32 @@ const chatMessageSchema = z.object({
 });
 
 // POST /api/chat - Send message to AI assistant
-router.post('/', async (req, res) => {
+router.post('/', async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user!.userId;
     const { message, conversationId } = chatMessageSchema.parse(req.body);
 
     // Get context: user's recent data
     const contactsResult = await query(
-      'SELECT COUNT(*)_id = $1',
+      'SELECT COUNT(*) as count FROM contacts WHERE user_id = $1',
       [userId]
     );
 
     const interactionsResult = await query(
-      `SELECT COUNT(*)_id = $1 AND occurred_at >= NOW() - INTERVAL '7 days'`,
+      `SELECT COUNT(*) as count FROM interactions 
+       WHERE user_id = $1 AND occurred_at >= NOW() - INTERVAL '7 days'`,
       [userId]
     );
 
     const revenueResult = await query(
-      `SELECT COALESCE(SUM(order_total), 0)_data 
+      `SELECT COALESCE(SUM(order_total), 0) as total 
+       FROM commerce_data 
        WHERE user_id = $1 AND order_date >= NOW() - INTERVAL '30 days'`,
       [userId]
     );
 
     const draftsResult = await query(
-      `SELECT COUNT(*)_emails 
+      `SELECT COUNT(*) as count FROM draft_emails 
        WHERE user_id = $1 AND status = 'pending'`,
       [userId]
     );
@@ -63,7 +65,7 @@ router.post('/', async (req, res) => {
          ORDER BY occurred_at ASC`,
         [userId, conversationId]
       );
-      conversationHistory = historyResult.rows.map((row) => ({
+      conversationHistory = historyResult.rows.map((row: any) => ({
         role: row.role,
         content: row.content,
       }));
@@ -83,7 +85,7 @@ Current user context:
 - Interactions this week: ${interactionsResult.rows[0].count}
 - Revenue this month: $${parseFloat(revenueResult.rows[0].total).toFixed(2)}
 - Pending draft emails: ${draftsResult.rows[0].count}
-- Connected platforms: ${platformsResult.rows.map((r) => r.platform).join(', ')}
+- Connected platforms: ${platformsResult.rows.map((r: any) => r.platform).join(', ')}
 
 You can help the user by:
 - Searching their contacts: "Find contacts who haven't been contacted in 30 days"
@@ -97,12 +99,12 @@ Be helpful, concise, and use the context provided to give relevant answers.`;
     const messages = [
       {
         role: 'system',
-        content,
+        content: systemContext,
       },
       ...conversationHistory,
       {
         role: 'user',
-        content,
+        content: message,
       },
     ];
 
@@ -125,9 +127,9 @@ Be helpful, concise, and use the context provided to give relevant answers.`;
       [
         userId,
         JSON.stringify({
-          conversationId,
+          conversationId: newConversationId,
           role: 'user',
-          content,
+          content: message,
         }),
       ]
     );
@@ -138,16 +140,16 @@ Be helpful, concise, and use the context provided to give relevant answers.`;
       [
         userId,
         JSON.stringify({
-          conversationId,
+          conversationId: newConversationId,
           role: 'assistant',
-          content,
+          content: assistantResponse,
         }),
       ]
     );
 
     res.json({
-      message,
-      conversationId,
+      message: assistantResponse,
+      conversationId: newConversationId,
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -159,7 +161,7 @@ Be helpful, concise, and use the context provided to give relevant answers.`;
 });
 
 // GET /api/chat/history - Get chat conversation history
-router.get('/history', async (req, res) => {
+router.get('/history', async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user!.userId;
     const { conversationId } = req.query;
@@ -180,10 +182,10 @@ router.get('/history', async (req, res) => {
     } else {
       // Get all conversations grouped
       historyQuery = `
-        SELECT DISTINCT event_data->>'conversationId'_id,
-               MIN(occurred_at)_at,
-               MAX(occurred_at)_message_at,
-               COUNT(*)_count
+        SELECT DISTINCT event_data->>'conversationId' as conversation_id,
+               MIN(occurred_at) as started_at,
+               MAX(occurred_at) as last_message_at,
+               COUNT(*) as message_count
         FROM analytics_events
         WHERE user_id = $1 AND event_type = 'chat_message'
         GROUP BY event_data->>'conversationId'
@@ -205,7 +207,7 @@ router.get('/history', async (req, res) => {
 });
 
 // POST /api/chat/search - Semantic search through interactions
-router.post('/search', async (req, res) => {
+router.post('/search', async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user!.userId;
     const { query: searchQuery } = req.body;
@@ -225,7 +227,7 @@ router.post('/search', async (req, res) => {
 });
 
 // DELETE /api/chat/:conversationId - Delete conversation
-router.delete('/:conversationId', async (req, res) => {
+router.delete('/:conversationId', async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user!.userId;
     const { conversationId } = req.params;

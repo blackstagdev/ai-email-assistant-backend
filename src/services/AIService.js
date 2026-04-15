@@ -94,7 +94,7 @@ Always be helpful, concise, and contextually aware.`,
         },
         {
           role: 'user',
-          content,
+          content: contextPrompt,
         },
       ],
       temperature: 0.7,
@@ -152,7 +152,7 @@ Always be helpful, concise, and contextually aware.`,
     // Recent interactions
     if (interactions.length > 0) {
       prompt += `RECENT EMAIL HISTORY:\n`;
-      interactions.slice(0, 5).forEach((interaction, idx) => {
+      interactions.slice(0, 5).forEach((interaction: any, idx: number) => {
         prompt += `${idx + 1}. [${interaction.direction}] ${interaction.subject} - ${interaction.sentiment || 'neutral'} (${new Date(interaction.occurred_at).toLocaleDateString()})\n`;
       });
       prompt += '\n';
@@ -170,7 +170,7 @@ Message: ${originalMessage.content?.substring(0, 500)}...\n\n`;
     // Recent orders
     if (orders.length > 0) {
       prompt += `RECENT ORDERS:\n`;
-      orders.forEach((order, idx) => {
+      orders.forEach((order: any, idx: number) => {
         prompt += `${idx + 1}. $${order.order_total} on ${new Date(order.order_date).toLocaleDateString()} - ${order.fulfillment_status}\n`;
       });
       prompt += '\n';
@@ -179,7 +179,7 @@ Message: ${originalMessage.content?.substring(0, 500)}...\n\n`;
     // Support tickets
     if (tickets.length > 0) {
       prompt += `SUPPORT TICKETS:\n`;
-      tickets.forEach((ticket, idx) => {
+      tickets.forEach((ticket: any, idx: number) => {
         prompt += `${idx + 1}. ${ticket.subject} - ${ticket.status} (${ticket.priority})\n`;
       });
       prompt += '\n';
@@ -202,11 +202,6 @@ Make the email personalized, contextually aware, and match the communication sty
 
   // Analyze email sentiment and intent
   static async analyzeEmail(emailContent) {
-    sentiment: string;
-    intent: string;
-    topics: string[];
-    actionItems: string[];
-  }> {
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o-mini', // Use cheaper model for analysis
       messages: [
@@ -216,7 +211,7 @@ Make the email personalized, contextually aware, and match the communication sty
         },
         {
           role: 'user',
-          content,
+          content: emailContent,
         },
       ],
       temperature: 0.3,
@@ -234,15 +229,11 @@ Make the email personalized, contextually aware, and match the communication sty
   }
 
   // Classify contact relationship
-  static async classifyRelationship(contactData: {
-    interactions: number;
-    totalRevenue: number;
-    supportTickets: number;
-    communicationFrequency: string;
+  static async classifyRelationship(contactData: number;
+    totalRevenue;
+    supportTickets;
+    communicationFrequency;
   }) {
-    relationshipType: string;
-    relationshipStrength: number;
-  }> {
     const prompt = `Based on this data, classify the relationship type and strength (0-100):
 - Total interactions: ${contactData.interactions}
 - Total revenue: $${contactData.totalRevenue}
@@ -260,7 +251,7 @@ Return JSON: { "relationship_type": "customer|lead|partner|colleague|vendor", "r
         },
         {
           role: 'user',
-          content,
+          content: prompt,
         },
       ],
       temperature: 0.3,
@@ -279,7 +270,7 @@ Return JSON: { "relationship_type": "customer|lead|partner|colleague|vendor", "r
   static async generateEmbedding(text) {
     const response = await openai.embeddings.create({
       model: 'text-embedding-3-small',
-      input,
+      input: text,
     });
 
     return response.data[0].embedding;
@@ -289,14 +280,16 @@ Return JSON: { "relationship_type": "customer|lead|partner|colleague|vendor", "r
   static async searchSimilarInteractions(
     userId,
     queryText,
-    limit: number = 10
+    limit= 10
   ) {
     const queryEmbedding = await this.generateEmbedding(queryText);
 
     // Use pgvector for similarity search
     const result = await query(
       `SELECT i.*, c.first_name, c.last_name, c.email,
-              (embedding <=> $1::vector).contact_id = c.id
+              (embedding <=> $1::vector) as distance
+       FROM interactions i
+       JOIN contacts c ON i.contact_id = c.id
        WHERE i.user_id = $2
        ORDER BY embedding <=> $1::vector
        LIMIT $3`,
@@ -324,7 +317,7 @@ Return JSON: { "relationship_type": "customer|lead|partner|colleague|vendor", "r
 
     const messages = messagesResult.rows;
     const conversationText = messages
-      .map((m) => `[${m.direction}] ${m.content}`)
+      .map((m: any) => `[${m.direction}] ${m.content}`)
       .join('\n\n');
 
     const completion = await openai.chat.completions.create({
@@ -336,7 +329,7 @@ Return JSON: { "relationship_type": "customer|lead|partner|colleague|vendor", "r
         },
         {
           role: 'user',
-          content,
+          content: conversationText,
         },
       ],
       temperature: 0.3,
@@ -357,7 +350,7 @@ Return JSON: { "relationship_type": "customer|lead|partner|colleague|vendor", "r
         },
         {
           role: 'user',
-          content,
+          content: text,
         },
       ],
       temperature: 0.3,

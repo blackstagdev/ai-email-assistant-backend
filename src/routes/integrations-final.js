@@ -13,7 +13,7 @@ router.use(authMiddleware);
 // ==================== CLICKUP ROUTES ====================
 
 // GET /api/integrations/clickup/connect - Get ClickUp OAuth URL
-router.get('/clickup/connect', async (req, res) => {
+router.get('/clickup/connect', async (req: AuthRequest, res: Response) => {
   try {
     const clientId = process.env.CLICKUP_CLIENT_ID;
     const redirectUri = process.env.CLICKUP_REDIRECT_URI || 'http://localhost:3000/api/integrations/clickup/callback';
@@ -28,7 +28,7 @@ router.get('/clickup/connect', async (req, res) => {
 });
 
 // GET /api/integrations/clickup/callback - ClickUp OAuth callback
-router.get('/clickup/callback', async (req, res) => {
+router.get('/clickup/callback', async (req: AuthRequest, res: Response) => {
   try {
     const { code } = req.query;
     if (!code) {
@@ -66,7 +66,7 @@ router.get('/clickup/callback', async (req, res) => {
 });
 
 // POST /api/integrations/clickup/sync - Sync ClickUp tasks
-router.post('/clickup/sync', async (req, res) => {
+router.post('/clickup/sync', async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user!.userId;
     await ClickUpService.syncTasks(userId);
@@ -87,7 +87,7 @@ router.post('/clickup/sync', async (req, res) => {
 // ==================== GOHIGHLEVEL ROUTES ====================
 
 // GET /api/integrations/gohighlevel/connect - Get GHL OAuth URL
-router.get('/gohighlevel/connect', async (req, res) => {
+router.get('/gohighlevel/connect', async (req: AuthRequest, res: Response) => {
   try {
     const clientId = process.env.GHL_CLIENT_ID;
     const redirectUri = process.env.GHL_REDIRECT_URI || 'http://localhost:3000/api/integrations/gohighlevel/callback';
@@ -102,7 +102,7 @@ router.get('/gohighlevel/connect', async (req, res) => {
 });
 
 // POST /api/integrations/gohighlevel/sync - Sync GHL data
-router.post('/gohighlevel/sync', async (req, res) => {
+router.post('/gohighlevel/sync', async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user!.userId;
 
@@ -128,7 +128,7 @@ router.post('/gohighlevel/sync', async (req, res) => {
 // ==================== QUICKBOOKS ROUTES ====================
 
 // GET /api/integrations/quickbooks/connect - Get QuickBooks OAuth URL
-router.get('/quickbooks/connect', async (req, res) => {
+router.get('/quickbooks/connect', async (req: AuthRequest, res: Response) => {
   try {
     const clientId = process.env.QUICKBOOKS_CLIENT_ID;
     const redirectUri = process.env.QUICKBOOKS_REDIRECT_URI || 'http://localhost:3000/api/integrations/quickbooks/callback';
@@ -144,7 +144,7 @@ router.get('/quickbooks/connect', async (req, res) => {
 });
 
 // POST /api/integrations/quickbooks/sync - Sync QuickBooks data
-router.post('/quickbooks/sync', async (req, res) => {
+router.post('/quickbooks/sync', async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user!.userId;
 
@@ -170,7 +170,7 @@ router.post('/quickbooks/sync', async (req, res) => {
 // ==================== GOOGLE ADS ROUTES ====================
 
 // POST /api/integrations/google-ads/sync - Sync Google Ads conversions
-router.post('/google-ads/sync', async (req, res) => {
+router.post('/google-ads/sync', async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user!.userId;
     await GoogleAdsService.syncConversions(userId);
@@ -189,7 +189,7 @@ router.post('/google-ads/sync', async (req, res) => {
 });
 
 // GET /api/integrations/google-ads/performance - Get campaign performance
-router.get('/google-ads/performance', async (req, res) => {
+router.get('/google-ads/performance', async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user!.userId;
     const performance = await GoogleAdsService.getCampaignPerformance(userId);
@@ -203,7 +203,7 @@ router.get('/google-ads/performance', async (req, res) => {
 // ==================== META ADS ROUTES ====================
 
 // POST /api/integrations/meta/sync - Sync Meta Ads leads
-router.post('/meta/sync', async (req, res) => {
+router.post('/meta/sync', async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user!.userId;
     await MetaAdsService.syncLeads(userId);
@@ -222,7 +222,7 @@ router.post('/meta/sync', async (req, res) => {
 });
 
 // GET /api/integrations/meta/performance - Get campaign performance
-router.get('/meta/performance', async (req, res) => {
+router.get('/meta/performance', async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user!.userId;
     const performance = await MetaAdsService.getCampaignPerformance(userId);
@@ -234,7 +234,7 @@ router.get('/meta/performance', async (req, res) => {
 });
 
 // GET /api/integrations/meta/insights - Get account insights
-router.get('/meta/insights', async (req, res) => {
+router.get('/meta/insights', async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user!.userId;
     const insights = await MetaAdsService.getAccountInsights(userId);
@@ -248,7 +248,7 @@ router.get('/meta/insights', async (req, res) => {
 // ==================== GOOGLE ANALYTICS ROUTES ====================
 
 // POST /api/integrations/google-analytics/sync - Sync GA data
-router.post('/google-analytics/sync', async (req, res) => {
+router.post('/google-analytics/sync', async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user!.userId;
     await GoogleAnalyticsService.storeAttributionData(userId);
@@ -267,7 +267,7 @@ router.post('/google-analytics/sync', async (req, res) => {
 });
 
 // GET /api/integrations/google-analytics/traffic - Get traffic data
-router.get('/google-analytics/traffic', async (req, res) => {
+router.get('/google-analytics/traffic', async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user!.userId;
     const traffic = await GoogleAnalyticsService.getTrafficData(userId);

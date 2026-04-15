@@ -1,15 +1,11 @@
 const { query } = require('../db');
-const { v44 } = require('uuid');
+const { v4 as uuidv4 } = require('uuid');
 
 
 
 
 
-export interface UpdateContactInput extends Partial {
-  relationshipStrength?: number;
-  customerLifetimeValue?: number;
-  totalRevenue?: number;
-}
+
 
 class ContactService {
   // Find or create contact by email
@@ -62,13 +58,12 @@ class ContactService {
   // Get all contacts for user with pagination
   static async getContactsByUser(
     userId,
-    options: {
-      limit?: number;
+    options?: number;
       offset?: number;
       search?: string;
       relationshipType?: string;
     } = {}
-  ) { contacts: Contact[]; total: number }> {
+  ) {
     const { limit = 50, offset = 0, search, relationshipType } = options;
 
     let whereClause = 'WHERE user_id = $1';
@@ -174,8 +169,7 @@ class ContactService {
     contactId,
     platform,
     platformId,
-    platformData: {
-      email?: string;
+    platformData?: string;
       username?: string;
       profileUrl?: string;
       rawData?: any;
@@ -251,7 +245,7 @@ class ContactService {
           WHEN (first_name || ' ' || last_name) ILIKE $2 THEN 90
           WHEN company ILIKE $2 THEN 80
           ELSE 50
-        END_score
+        END as relevance_score
        FROM contacts 
        WHERE user_id = $1 
        AND (

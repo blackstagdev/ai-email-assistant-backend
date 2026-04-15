@@ -36,17 +36,17 @@ class AnalyticsService {
   // Get comprehensive dashboard metrics
   static async getDashboardMetrics(
     userId,
-    timeRange: 'day' | 'week' | 'month' | 'year' = 'month'
+    timeRange'day' | 'week' | 'month' | 'year' = 'month'
   ) {
     const dateFilter = this.getDateFilter(timeRange);
 
     // Overview metrics
     const overviewResult = await query(
       `SELECT 
-        COUNT(DISTINCT c.id)_contacts,
-        COUNT(DISTINCT i.id)_interactions,
-        COALESCE(SUM(c.total_revenue), 0)_revenue,
-        COUNT(DISTINCT CASE WHEN c.last_contact_date >= NOW() - INTERVAL '30 days' THEN c.id END)_contacts
+        COUNT(DISTINCT c.id) as total_contacts,
+        COUNT(DISTINCT i.id) as total_interactions,
+        COALESCE(SUM(c.total_revenue), 0) as total_revenue,
+        COUNT(DISTINCT CASE WHEN c.last_contact_date >= NOW() - INTERVAL '30 days' THEN c.id END) as active_contacts
        FROM contacts c
        LEFT JOIN interactions i ON c.id = i.contact_id
        WHERE c.user_id = $1`,
@@ -57,12 +57,14 @@ class AnalyticsService {
     const interactionsResult = await query(
       `SELECT 
         interaction_type,
-        COUNT(*)_id = $1 AND occurred_at >= $2
+        COUNT(*) as count
+       FROM interactions
+       WHERE user_id = $1 AND occurred_at >= $2
        GROUP BY interaction_type`,
       [userId, dateFilter]
     );
 
-    const interactionCounts = interactionsResult.rows.reduce((acc, row) => {
+    const interactionCounts = interactionsResult.rows.reduce((acc: any, row: any) => {
       acc[row.interaction_type] = parseInt(row.count);
       return acc;
     }, {});
@@ -71,9 +73,10 @@ class AnalyticsService {
     const revenueResult = await query(
       `SELECT 
         COALESCE(SUM(CASE WHEN order_date >= NOW() - INTERVAL '1 day' THEN order_total END), 0),
-        COALESCE(SUM(CASE WHEN order_date >= NOW() - INTERVAL '7 days' THEN order_total END), 0)_week,
-        COALESCE(SUM(CASE WHEN order_date >= NOW() - INTERVAL '30 days' THEN order_total END), 0)_month,
-        COALESCE(SUM(order_total), 0)_data
+        COALESCE(SUM(CASE WHEN order_date >= NOW() - INTERVAL '7 days' THEN order_total END), 0) as this_week,
+        COALESCE(SUM(CASE WHEN order_date >= NOW() - INTERVAL '30 days' THEN order_total END), 0) as this_month,
+        COALESCE(SUM(order_total), 0) as total
+       FROM commerce_data
        WHERE user_id = $1`,
       [userId]
     );
@@ -81,10 +84,10 @@ class AnalyticsService {
     // Support metrics
     const supportResult = await query(
       `SELECT 
-        COUNT(CASE WHEN status IN ('open', 'pending') THEN 1 END)_tickets,
-        COUNT(CASE WHEN status IN ('resolved', 'closed') THEN 1 END)_tickets,
-        AVG(resolution_time_hours)_resolution_time,
-        AVG(satisfaction_score)_satisfaction
+        COUNT(CASE WHEN status IN ('open', 'pending') THEN 1 END) as open_tickets,
+        COUNT(CASE WHEN status IN ('resolved', 'closed') THEN 1 END) as resolved_tickets,
+        AVG(resolution_time_hours) as avg_resolution_time,
+        AVG(satisfaction_score) as avg_satisfaction
        FROM support_tickets
        WHERE user_id = $1 AND created_at >= $2`,
       [userId, dateFilter]
@@ -94,7 +97,9 @@ class AnalyticsService {
     const interactionTrendsResult = await query(
       `SELECT 
         DATE(occurred_at),
-        COUNT(*)_id = $1 AND occurred_at >= $2
+        COUNT(*) as count
+       FROM interactions
+       WHERE user_id = $1 AND occurred_at >= $2
        GROUP BY DATE(occurred_at)
        ORDER BY date DESC`,
       [userId, dateFilter]
@@ -104,7 +109,8 @@ class AnalyticsService {
     const revenueTrendsResult = await query(
       `SELECT 
         DATE(order_date),
-        SUM(order_total)_data
+        SUM(order_total) as amount
+       FROM commerce_data
        WHERE user_id = $1 AND order_date >= $2
        GROUP BY DATE(order_date)
        ORDER BY date DESC`,
@@ -118,7 +124,9 @@ class AnalyticsService {
         c.first_name || ' ' || c.last_name,
         c.email,
         c.total_revenue,
-        COUNT(i.id).id = i.contact_id AND i.occurred_at >= $2
+        COUNT(i.id) as interactions
+       FROM contacts c
+       LEFT JOIN interactions i ON c.id = i.contact_id AND i.occurred_at >= $2
        WHERE c.user_id = $1
        GROUP BY c.id, c.first_name, c.last_name, c.email, c.total_revenue
        ORDER BY c.total_revenue DESC, interactions DESC
@@ -156,15 +164,15 @@ class AnalyticsService {
         satisfactionScore: parseFloat(support.avg_satisfaction) || 0,
       },
       trends: {
-        interactionsByDay: interactionTrendsResult.rows.map((row) => ({
+        interactionsByDay: interactionTrendsResult.rows.map((row: any) => ({
           date: row.date,
           count: parseInt(row.count),
         })),
-        revenueByDay: revenueTrendsResult.rows.map((row) => ({
+        revenueByDay: revenueTrendsResult.rows.map((row: any) => ({
           date: row.date,
           amount: parseFloat(row.amount),
         })),
-        topContacts: topContactsResult.rows.map((row) => ({
+        topContacts: topContactsResult.rows.map((row: any) => ({
           id: row.id,
           name: row.name,
           email: row.email,
@@ -178,7 +186,7 @@ class AnalyticsService {
   // Get revenue analytics with breakdown
   static async getRevenueAnalytics(
     userId,
-    timeRange: 'day' | 'week' | 'month' | 'year' = 'month'
+    timeRange'day' | 'week' | 'month' | 'year' = 'month'
   ) {
     const dateFilter = this.getDateFilter(timeRange);
 
@@ -186,9 +194,9 @@ class AnalyticsService {
     const platformResult = await query(
       `SELECT 
         platform,
-        COUNT(*)_count,
-        SUM(order_total)_revenue,
-        AVG(order_total)_order_value
+        COUNT(*) as order_count,
+        SUM(order_total) as total_revenue,
+        AVG(order_total) as avg_order_value
        FROM commerce_data
        WHERE user_id = $1 AND order_date >= $2
        GROUP BY platform`,
@@ -199,9 +207,9 @@ class AnalyticsService {
     const segmentResult = await query(
       `SELECT 
         c.relationship_type,
-        COUNT(DISTINCT c.id)_count,
-        SUM(cd.order_total)_revenue,
-        AVG(cd.order_total)_order_value
+        COUNT(DISTINCT c.id) as customer_count,
+        SUM(cd.order_total) as total_revenue,
+        AVG(cd.order_total) as avg_order_value
        FROM contacts c
        JOIN commerce_data cd ON c.id = cd.contact_id
        WHERE c.user_id = $1 AND cd.order_date >= $2
@@ -212,11 +220,13 @@ class AnalyticsService {
     // Top products/items (from order items JSON)
     const topProductsResult = await query(
       `SELECT 
-        item->>'name'_name,
-        COUNT(*)_ordered,
-        SUM((item->>'quantity')::int)_quantity,
-        SUM((item->>'price')::numeric * (item->>'quantity')::int)_data,
-       jsonb_array_elements(items)_id = $1 AND order_date >= $2
+        item->>'name' as product_name,
+        COUNT(*) as times_ordered,
+        SUM((item->>'quantity')::int) as total_quantity,
+        SUM((item->>'price')::numeric * (item->>'quantity')::int) as revenue
+       FROM commerce_data,
+       jsonb_array_elements(items) as item
+       WHERE user_id = $1 AND order_date >= $2
        GROUP BY item->>'name'
        ORDER BY revenue DESC
        LIMIT 10`,
@@ -233,7 +243,7 @@ class AnalyticsService {
   // Get interaction analytics
   static async getInteractionAnalytics(
     userId,
-    timeRange: 'day' | 'week' | 'month' | 'year' = 'month'
+    timeRange'day' | 'week' | 'month' | 'year' = 'month'
   ) {
     const dateFilter = this.getDateFilter(timeRange);
 
@@ -244,7 +254,9 @@ class AnalyticsService {
         interaction_type,
         COUNT(*),
         COUNT(CASE WHEN direction = 'inbound' THEN 1 END),
-        COUNT(CASE WHEN direction = 'outbound' THEN 1 END)_id = $1 AND occurred_at >= $2
+        COUNT(CASE WHEN direction = 'outbound' THEN 1 END) as outbound
+       FROM interactions
+       WHERE user_id = $1 AND occurred_at >= $2
        GROUP BY platform, interaction_type
        ORDER BY count DESC`,
       [userId, dateFilter]
@@ -254,7 +266,9 @@ class AnalyticsService {
     const sentimentResult = await query(
       `SELECT 
         sentiment,
-        COUNT(*)_id = $1 AND occurred_at >= $2 AND sentiment IS NOT NULL
+        COUNT(*) as count
+       FROM interactions
+       WHERE user_id = $1 AND occurred_at >= $2 AND sentiment IS NOT NULL
        GROUP BY sentiment`,
       [userId, dateFilter]
     );
@@ -264,7 +278,7 @@ class AnalyticsService {
       `SELECT 
         AVG(EXTRACT(EPOCH FROM (
           i2.occurred_at - i1.occurred_at
-        )) / 3600)_response_hours
+        )) / 3600) as avg_response_hours
        FROM interactions i1
        JOIN interactions i2 ON i1.contact_id = i2.contact_id
        WHERE i1.user_id = $1
@@ -285,16 +299,16 @@ class AnalyticsService {
   // Get contact growth analytics
   static async getContactGrowth(
     userId,
-    timeRange: 'day' | 'week' | 'month' | 'year' = 'month'
+    timeRange'day' | 'week' | 'month' | 'year' = 'month'
   ) {
     const dateFilter = this.getDateFilter(timeRange);
 
     const result = await query(
       `SELECT 
         DATE(created_at),
-        COUNT(*)_contacts,
-        COUNT(CASE WHEN relationship_type = 'customer' THEN 1 END)_customers,
-        COUNT(CASE WHEN relationship_type = 'lead' THEN 1 END)_leads
+        COUNT(*) as new_contacts,
+        COUNT(CASE WHEN relationship_type = 'customer' THEN 1 END) as new_customers,
+        COUNT(CASE WHEN relationship_type = 'lead' THEN 1 END) as new_leads
        FROM contacts
        WHERE user_id = $1 AND created_at >= $2
        GROUP BY DATE(created_at)
@@ -315,9 +329,10 @@ class AnalyticsService {
         ma.source,
         ma.medium,
         COUNT(DISTINCT ma.contact_id),
-        SUM(c.total_revenue)_revenue,
-        AVG(ma.cost_per_acquisition)_cpa,
-        SUM(c.total_revenue) / NULLIF(SUM(ma.cost_per_acquisition), 0)_attribution ma
+        SUM(c.total_revenue) as total_revenue,
+        AVG(ma.cost_per_acquisition) as avg_cpa,
+        SUM(c.total_revenue) / NULLIF(SUM(ma.cost_per_acquisition), 0) as roas
+       FROM marketing_attribution ma
        JOIN contacts c ON ma.contact_id = c.id
        WHERE ma.user_id = $1
        GROUP BY ma.ad_platform, ma.source, ma.medium
@@ -331,7 +346,7 @@ class AnalyticsService {
   }
 
   // Helper: Get date filter based on time range
-  private static getDateFilter(timeRange: 'day' | 'week' | 'month' | 'year') {
+  private static getDateFilter(timeRange'day' | 'week' | 'month' | 'year') {
     const now = new Date();
     switch (timeRange) {
       case 'day':
