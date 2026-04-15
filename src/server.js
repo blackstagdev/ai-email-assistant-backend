@@ -53,7 +53,7 @@ app.use((req, res) => {
 });
 
 // Error handler
-app.use((err: any, req, res, next: any) => {
+app.use((err, req, res, next) => {
   console.error('Error:', err);
   res.status(500).json({
     error: 'Internal server error',
@@ -68,4 +68,4 @@ app.listen(PORT, () => {
   console.log(`Frontend URL: ${process.env.FRONTEND_URL || 'http://localhost:5173'}`);
 });
 
-export default app;
+module.exports = app;

@@ -1,19 +1,9 @@
 const { query } = require('../db');
-const { v4 as uuidv4 } = require('uuid');
-
-
-
-
-
-
+const { v4: uuidv4 } = require('uuid');
 
 class ContactService {
   // Find or create contact by email
-  static async findOrCreateByEmail(
-    userId,
-    email,
-    additionalData?: CreateContactInput
-  ) {
+  static async findOrCreateByEmail(userId, email, additionalData) {
     // Try to find existing contact
     const existing = await query(
       'SELECT * FROM contacts WHERE user_id = $1 AND email = $2',
@@ -29,9 +19,7 @@ class ContactService {
   }
 
   // Create new contact
-  static async createContact(
-    userId,
-    data) {
+  static async createContact(userId, data) {
     const result = await query(
       `INSERT INTO contacts (
         user_id, email, phone, first_name, last_name, company, job_title,
@@ -56,15 +44,8 @@ class ContactService {
   }
 
   // Get all contacts for user with pagination
-  static async getContactsByUser(
-    userId,
-    options?: number;
-      offset?: number;
-      search?: string;
-      relationshipType?: string;
-    } = {}
-  ) {
-    const { limit = 50, offset = 0, search, relationshipType } = options;
+  static async getContactsByUser(userId, options = {}) {
+    const { limit = 50, offset = 0, search = '', relationshipType = null } = options;
 
     let whereClause = 'WHERE user_id = $1';
     const params = [userId];
@@ -119,10 +100,7 @@ class ContactService {
   }
 
   // Update contact
-  static async updateContact(
-    userId,
-    contactId,
-    data) {
+  static async updateContact(userId, contactId, data) {
     const updates = [];
     const params = [];
     let paramIndex = 1;
@@ -161,20 +139,11 @@ class ContactService {
       [contactId, userId]
     );
 
-    return result.rowCount > 0;
+    return (result.rowCount ?? 0) > 0;
   }
 
   // Link platform identity to contact
-  static async linkPlatformIdentity(
-    contactId,
-    platform,
-    platformId,
-    platformData?: string;
-      username?: string;
-      profileUrl?: string;
-      rawData?: any;
-    }
-  ) {
+  static async linkPlatformIdentity(contactId, platform, platformId, platformData = {}) {
     await query(
       `INSERT INTO platform_identities (
         contact_id, platform, platform_id, platform_email, 
@@ -210,9 +179,7 @@ class ContactService {
   }
 
   // Update contact revenue and LTV
-  static async updateFinancials(
-    contactId,
-    additionalRevenue) {
+  static async updateFinancials(contactId, additionalRevenue) {
     await query(
       `UPDATE contacts 
        SET total_revenue = total_revenue + $1,
@@ -235,9 +202,7 @@ class ContactService {
   }
 
   // Search contacts by multiple criteria with fuzzy matching
-  static async searchContacts(
-    userId,
-    searchTerm) {
+  static async searchContacts(userId, searchTerm) {
     const result = await query(
       `SELECT *, 
         CASE 
@@ -263,6 +228,5 @@ class ContactService {
     return result.rows;
   }
 }
-
 
 module.exports = { ContactService };

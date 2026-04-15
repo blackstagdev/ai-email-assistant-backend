@@ -21,7 +21,7 @@ const chatMessageSchema = z.object({
 // POST /api/chat - Send message to AI assistant
 router.post('/', async (req, res) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user.userId;
     const { message, conversationId } = chatMessageSchema.parse(req.body);
 
     // Get context: user's recent data
@@ -65,7 +65,7 @@ router.post('/', async (req, res) => {
          ORDER BY occurred_at ASC`,
         [userId, conversationId]
       );
-      conversationHistory = historyResult.rows.map((row: any) => ({
+      conversationHistory = historyResult.rows.map((row) => ({
         role: row.role,
         content: row.content,
       }));
@@ -85,7 +85,7 @@ Current user context:
 - Interactions this week: ${interactionsResult.rows[0].count}
 - Revenue this month: $${parseFloat(revenueResult.rows[0].total).toFixed(2)}
 - Pending draft emails: ${draftsResult.rows[0].count}
-- Connected platforms: ${platformsResult.rows.map((r: any) => r.platform).join(', ')}
+- Connected platforms: ${platformsResult.rows.map((r) => r.platform).join(', ')}
 
 You can help the user by:
 - Searching their contacts: "Find contacts who haven't been contacted in 30 days"
@@ -99,12 +99,12 @@ Be helpful, concise, and use the context provided to give relevant answers.`;
     const messages = [
       {
         role: 'system',
-        content: systemContext,
+        content,
       },
       ...conversationHistory,
       {
         role: 'user',
-        content: message,
+        content,
       },
     ];
 
@@ -127,9 +127,9 @@ Be helpful, concise, and use the context provided to give relevant answers.`;
       [
         userId,
         JSON.stringify({
-          conversationId: newConversationId,
+          conversationId,
           role: 'user',
-          content: message,
+          content,
         }),
       ]
     );
@@ -140,16 +140,16 @@ Be helpful, concise, and use the context provided to give relevant answers.`;
       [
         userId,
         JSON.stringify({
-          conversationId: newConversationId,
+          conversationId,
           role: 'assistant',
-          content: assistantResponse,
+          content,
         }),
       ]
     );
 
     res.json({
-      message: assistantResponse,
-      conversationId: newConversationId,
+      message,
+      conversationId,
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -163,11 +163,11 @@ Be helpful, concise, and use the context provided to give relevant answers.`;
 // GET /api/chat/history - Get chat conversation history
 router.get('/history', async (req, res) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user.userId;
     const { conversationId } = req.query;
 
-    let historyQuery: string;
-    let params: any[];
+    let historyQuery;
+    let params = [];
 
     if (conversationId) {
       historyQuery = `
@@ -209,7 +209,7 @@ router.get('/history', async (req, res) => {
 // POST /api/chat/search - Semantic search through interactions
 router.post('/search', async (req, res) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user.userId;
     const { query: searchQuery } = req.body;
 
     if (!searchQuery || typeof searchQuery !== 'string') {
@@ -229,7 +229,7 @@ router.post('/search', async (req, res) => {
 // DELETE /api/chat/:conversationId - Delete conversation
 router.delete('/:conversationId', async (req, res) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user.userId;
     const { conversationId } = req.params;
 
     await query(
@@ -247,4 +247,4 @@ router.delete('/:conversationId', async (req, res) => {
   }
 });
 
-export default router;
+module.exports = router;

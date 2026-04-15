@@ -2,13 +2,11 @@ const axios = require('axios');
 const { query } = require('../db');
 const { ContactService } = require('./ContactService');
 
-
-
 class ShipStationService {
-  private static readonly BASE_URL = 'https://ssapi.shipstation.com';
+  static BASE_URL = 'https://ssapi.shipstation.com';
 
   // Get ShipStation API client
-  private static getClient(config) {
+  static getClient(config) {
     const auth = Buffer.from(`${config.apiKey}:${config.apiSecret}`).toString('base64');
     
     return axios.create({
@@ -21,7 +19,7 @@ class ShipStationService {
   }
 
   // Get stored ShipStation credentials
-  private static async getConfig(userId) {
+  static async getConfig(userId) {
     const result = await query(
       `SELECT metadata FROM platform_integrations 
        WHERE user_id = $1 AND platform = 'shipstation' AND is_connected = true`,
@@ -40,27 +38,25 @@ class ShipStationService {
   }
 
   // Sync shipments from ShipStation
-  static async syncShipments(
-    userId,
-    options?: Date } = {}
-  ) {
+  static async syncShipments(userId, options = {}) {
     const config = await this.getConfig(userId);
     const client = this.getClient(config);
 
+    const { sinceDate = null } = options;
     let page = 1;
     const pageSize = 500;
     let hasMore = true;
 
     while (hasMore) {
       const params = {
-        page,
-        pageSize,
+        page: page,
+        pageSize: pageSize,
         sortBy: 'ModifyDate',
         sortDir: 'DESC',
       };
 
-      if (options.sinceDate) {
-        params.modifyDateStart = options.sinceDate.toISOString();
+      if (sinceDate) {
+        params.modifyDateStart = sinceDate.toISOString();
       }
 
       const response = await client.get('/shipments', { params });
@@ -138,7 +134,7 @@ class ShipStationService {
     const client = this.getClient(config);
 
     const response = await client.get('/shipments', {
-      params: { orderNumber },
+      params: { orderNumber: orderNumber },
     });
 
     return response.data.shipments[0] || null;
@@ -151,16 +147,14 @@ class ShipStationService {
 
     // ShipStation doesn't have direct tracking endpoint, but we can get shipment info
     const response = await client.get('/shipments', {
-      params: { trackingNumber },
+      params: { trackingNumber: trackingNumber },
     });
 
     return response.data.shipments[0] || null;
   }
 
   // Create shipment label
-  static async createShipmentLabel(
-    userId,
-    shipmentData) {
+  static async createShipmentLabel(userId, shipmentData) {
     const config = await this.getConfig(userId);
     const client = this.getClient(config);
 
@@ -169,17 +163,14 @@ class ShipStationService {
   }
 
   // Subscribe to ShipStation webhooks
-  static async subscribeToWebhook(
-    userId,
-    event,
-    callbackUrl) {
+  static async subscribeToWebhook(userId, event, callbackUrl) {
     const config = await this.getConfig(userId);
     const client = this.getClient(config);
 
     const webhook = {
       target_url: callbackUrl,
-      event,
-      store_id: null, // null subscribes to all stores
+      event: event,
+      store_id: null,
       friendly_name: `AI Assistant - ${event}`,
     };
 
@@ -190,9 +181,9 @@ class ShipStationService {
   // Setup recommended webhooks
   static async setupWebhooks(userId, baseUrl) {
     const events = [
-      'ORDER_NOTIFY',      // New order
-      'ITEM_ORDER_NOTIFY', // Order item changed
-      'SHIP_NOTIFY',       // Order shipped
+      'ORDER_NOTIFY',
+      'ITEM_ORDER_NOTIFY',
+      'SHIP_NOTIFY',
     ];
 
     for (const event of events) {
@@ -208,6 +199,5 @@ class ShipStationService {
     }
   }
 }
-
 
 module.exports = { ShipStationService };

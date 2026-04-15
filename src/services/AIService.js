@@ -2,19 +2,26 @@ const OpenAI = require('openai');
 const { query } = require('../db');
 const { ContactService } = require('./ContactService');
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+// Don't initialize OpenAI at startup - will be initialized per request
+let openai = null;
 
-
-
-
+// Helper to get OpenAI client with API key
+function getOpenAIClient(apiKey) {
+  if (!apiKey) {
+    apiKey = process.env.OPENAI_API_KEY;
+  }
+  
+  if (!apiKey) {
+    throw new Error('OpenAI API key is required');
+  }
+  
+  return new OpenAI({ apiKey: apiKey });
+}
 
 class AIService {
   // Generate email draft with full context
-  static async generateEmailDraft(
-    userId,
-    context) {
+  static async generateEmailDraft(userId, context, apiKey = null) {
+    const openai = getOpenAIClient(apiKey);
     const { contactId, originalMessageId, userPrompt, tone = 'professional' } = context;
 
     // Get contact details
@@ -112,7 +119,7 @@ Always be helpful, concise, and contextually aware.`,
   }
 
   // Build comprehensive context prompt
-  private static buildContextPrompt(data) {
+  static buildContextPrompt(data) {
     const {
       contact,
       interactions,
@@ -152,7 +159,7 @@ Always be helpful, concise, and contextually aware.`,
     // Recent interactions
     if (interactions.length > 0) {
       prompt += `RECENT EMAIL HISTORY:\n`;
-      interactions.slice(0, 5).forEach((interaction: any, idx: number) => {
+      interactions.slice(0, 5).forEach((interaction, idx) => {
         prompt += `${idx + 1}. [${interaction.direction}] ${interaction.subject} - ${interaction.sentiment || 'neutral'} (${new Date(interaction.occurred_at).toLocaleDateString()})\n`;
       });
       prompt += '\n';
@@ -170,7 +177,7 @@ Message: ${originalMessage.content?.substring(0, 500)}...\n\n`;
     // Recent orders
     if (orders.length > 0) {
       prompt += `RECENT ORDERS:\n`;
-      orders.forEach((order: any, idx: number) => {
+      orders.forEach((order, idx) => {
         prompt += `${idx + 1}. $${order.order_total} on ${new Date(order.order_date).toLocaleDateString()} - ${order.fulfillment_status}\n`;
       });
       prompt += '\n';
@@ -179,7 +186,7 @@ Message: ${originalMessage.content?.substring(0, 500)}...\n\n`;
     // Support tickets
     if (tickets.length > 0) {
       prompt += `SUPPORT TICKETS:\n`;
-      tickets.forEach((ticket: any, idx: number) => {
+      tickets.forEach((ticket, idx) => {
         prompt += `${idx + 1}. ${ticket.subject} - ${ticket.status} (${ticket.priority})\n`;
       });
       prompt += '\n';
@@ -201,9 +208,10 @@ Make the email personalized, contextually aware, and match the communication sty
   }
 
   // Analyze email sentiment and intent
-  static async analyzeEmail(emailContent) {
+  static async analyzeEmail(emailContent, apiKey = null) {
+    const openai = getOpenAIClient(apiKey);
     const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini', // Use cheaper model for analysis
+      model: 'gpt-4o-mini',
       messages: [
         {
           role: 'system',
@@ -229,11 +237,8 @@ Make the email personalized, contextually aware, and match the communication sty
   }
 
   // Classify contact relationship
-  static async classifyRelationship(contactData: number;
-    totalRevenue;
-    supportTickets;
-    communicationFrequency;
-  }) {
+  static async classifyRelationship(contactData, apiKey = null) {
+    const openai = getOpenAIClient(apiKey);
     const prompt = `Based on this data, classify the relationship type and strength (0-100):
 - Total interactions: ${contactData.interactions}
 - Total revenue: $${contactData.totalRevenue}
@@ -267,7 +272,9 @@ Return JSON: { "relationship_type": "customer|lead|partner|colleague|vendor", "r
   }
 
   // Generate embeddings for semantic search
-  static async generateEmbedding(text) {
+
+  static async generateEmbedding(text, apiKey = null) {
+    const openai = getOpenAIClient(apiKey);
     const response = await openai.embeddings.create({
       model: 'text-embedding-3-small',
       input: text,
@@ -277,11 +284,7 @@ Return JSON: { "relationship_type": "customer|lead|partner|colleague|vendor", "r
   }
 
   // Search similar interactions using embeddings
-  static async searchSimilarInteractions(
-    userId,
-    queryText,
-    limit= 10
-  ) {
+  static async searchSimilarInteractions(userId, queryText, limit = 10) {
     const queryEmbedding = await this.generateEmbedding(queryText);
 
     // Use pgvector for similarity search
@@ -317,7 +320,7 @@ Return JSON: { "relationship_type": "customer|lead|partner|colleague|vendor", "r
 
     const messages = messagesResult.rows;
     const conversationText = messages
-      .map((m: any) => `[${m.direction}] ${m.content}`)
+      .map((m) => `[${m.direction}] ${m.content}`)
       .join('\n\n');
 
     const completion = await openai.chat.completions.create({
@@ -361,6 +364,5 @@ Return JSON: { "relationship_type": "customer|lead|partner|colleague|vendor", "r
     return result.action_items || [];
   }
 }
-
 
 module.exports = { AIService };

@@ -1,43 +1,8 @@
 const { query } = require('../db');
 
-;
-  interactions: {
-    emails: number;
-    messages: number;
-    calls: number;
-    meetings: number;
-  };
-  revenue: {
-    total: number;
-    thisMonth: number;
-    thisWeek: number;
-    today: number;
-  };
-  support: {
-    openTickets: number;
-    resolvedTickets: number;
-    avgResolutionTime: number;
-    satisfactionScore: number;
-  };
-  trends: {
-    interactionsByDay: Array<{ date: string; count: number }>;
-    revenueByDay: Array<{ date: string; amount: number }>;
-    topContacts: Array<{
-      id: string;
-      name: string;
-      email: string;
-      revenue: number;
-      interactions: number;
-    }>;
-  };
-}
-
 class AnalyticsService {
   // Get comprehensive dashboard metrics
-  static async getDashboardMetrics(
-    userId,
-    timeRange'day' | 'week' | 'month' | 'year' = 'month'
-  ) {
+  static async getDashboardMetrics(userId, timeRange = 'month') {
     const dateFilter = this.getDateFilter(timeRange);
 
     // Overview metrics
@@ -64,7 +29,7 @@ class AnalyticsService {
       [userId, dateFilter]
     );
 
-    const interactionCounts = interactionsResult.rows.reduce((acc: any, row: any) => {
+    const interactionCounts = interactionsResult.rows.reduce((acc, row) => {
       acc[row.interaction_type] = parseInt(row.count);
       return acc;
     }, {});
@@ -72,7 +37,7 @@ class AnalyticsService {
     // Revenue metrics
     const revenueResult = await query(
       `SELECT 
-        COALESCE(SUM(CASE WHEN order_date >= NOW() - INTERVAL '1 day' THEN order_total END), 0),
+        COALESCE(SUM(CASE WHEN order_date >= NOW() - INTERVAL '1 day' THEN order_total END), 0) as today,
         COALESCE(SUM(CASE WHEN order_date >= NOW() - INTERVAL '7 days' THEN order_total END), 0) as this_week,
         COALESCE(SUM(CASE WHEN order_date >= NOW() - INTERVAL '30 days' THEN order_total END), 0) as this_month,
         COALESCE(SUM(order_total), 0) as total
@@ -96,7 +61,7 @@ class AnalyticsService {
     // Interactions by day
     const interactionTrendsResult = await query(
       `SELECT 
-        DATE(occurred_at),
+        DATE(occurred_at) as date,
         COUNT(*) as count
        FROM interactions
        WHERE user_id = $1 AND occurred_at >= $2
@@ -108,7 +73,7 @@ class AnalyticsService {
     // Revenue by day
     const revenueTrendsResult = await query(
       `SELECT 
-        DATE(order_date),
+        DATE(order_date) as date,
         SUM(order_total) as amount
        FROM commerce_data
        WHERE user_id = $1 AND order_date >= $2
@@ -121,9 +86,9 @@ class AnalyticsService {
     const topContactsResult = await query(
       `SELECT 
         c.id,
-        c.first_name || ' ' || c.last_name,
+        c.first_name || ' ' || c.last_name as name,
         c.email,
-        c.total_revenue,
+        c.total_revenue as revenue,
         COUNT(i.id) as interactions
        FROM contacts c
        LEFT JOIN interactions i ON c.id = i.contact_id AND i.occurred_at >= $2
@@ -164,15 +129,15 @@ class AnalyticsService {
         satisfactionScore: parseFloat(support.avg_satisfaction) || 0,
       },
       trends: {
-        interactionsByDay: interactionTrendsResult.rows.map((row: any) => ({
+        interactionsByDay: interactionTrendsResult.rows.map((row) => ({
           date: row.date,
           count: parseInt(row.count),
         })),
-        revenueByDay: revenueTrendsResult.rows.map((row: any) => ({
+        revenueByDay: revenueTrendsResult.rows.map((row) => ({
           date: row.date,
           amount: parseFloat(row.amount),
         })),
-        topContacts: topContactsResult.rows.map((row: any) => ({
+        topContacts: topContactsResult.rows.map((row) => ({
           id: row.id,
           name: row.name,
           email: row.email,
@@ -184,10 +149,7 @@ class AnalyticsService {
   }
 
   // Get revenue analytics with breakdown
-  static async getRevenueAnalytics(
-    userId,
-    timeRange'day' | 'week' | 'month' | 'year' = 'month'
-  ) {
+  static async getRevenueAnalytics(userId, timeRange = 'month') {
     const dateFilter = this.getDateFilter(timeRange);
 
     // Revenue by platform
@@ -241,10 +203,7 @@ class AnalyticsService {
   }
 
   // Get interaction analytics
-  static async getInteractionAnalytics(
-    userId,
-    timeRange'day' | 'week' | 'month' | 'year' = 'month'
-  ) {
+  static async getInteractionAnalytics(userId, timeRange = 'month') {
     const dateFilter = this.getDateFilter(timeRange);
 
     // Interactions by platform
@@ -252,8 +211,8 @@ class AnalyticsService {
       `SELECT 
         platform,
         interaction_type,
-        COUNT(*),
-        COUNT(CASE WHEN direction = 'inbound' THEN 1 END),
+        COUNT(*) as count,
+        COUNT(CASE WHEN direction = 'inbound' THEN 1 END) as inbound,
         COUNT(CASE WHEN direction = 'outbound' THEN 1 END) as outbound
        FROM interactions
        WHERE user_id = $1 AND occurred_at >= $2
@@ -297,15 +256,12 @@ class AnalyticsService {
   }
 
   // Get contact growth analytics
-  static async getContactGrowth(
-    userId,
-    timeRange'day' | 'week' | 'month' | 'year' = 'month'
-  ) {
+  static async getContactGrowth(userId, timeRange = 'month') {
     const dateFilter = this.getDateFilter(timeRange);
 
     const result = await query(
       `SELECT 
-        DATE(created_at),
+        DATE(created_at) as date,
         COUNT(*) as new_contacts,
         COUNT(CASE WHEN relationship_type = 'customer' THEN 1 END) as new_customers,
         COUNT(CASE WHEN relationship_type = 'lead' THEN 1 END) as new_leads
@@ -328,7 +284,7 @@ class AnalyticsService {
         ma.ad_platform,
         ma.source,
         ma.medium,
-        COUNT(DISTINCT ma.contact_id),
+        COUNT(DISTINCT ma.contact_id) as contacts,
         SUM(c.total_revenue) as total_revenue,
         AVG(ma.cost_per_acquisition) as avg_cpa,
         SUM(c.total_revenue) / NULLIF(SUM(ma.cost_per_acquisition), 0) as roas
@@ -346,7 +302,7 @@ class AnalyticsService {
   }
 
   // Helper: Get date filter based on time range
-  private static getDateFilter(timeRange'day' | 'week' | 'month' | 'year') {
+  static getDateFilter(timeRange) {
     const now = new Date();
     switch (timeRange) {
       case 'day':
@@ -365,6 +321,5 @@ class AnalyticsService {
     return now;
   }
 }
-
 
 module.exports = { AnalyticsService };

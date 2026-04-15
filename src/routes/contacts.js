@@ -30,7 +30,7 @@ const updateContactSchema = createContactSchema.extend({
 // GET /api/contacts - List all contacts with pagination and filtering
 router.get('/', async (req, res) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user.userId;
     const {
       limit = '50',
       offset = '0',
@@ -41,8 +41,8 @@ router.get('/', async (req, res) => {
     const result = await ContactService.getContactsByUser(userId, {
       limit: parseInt(limit),
       offset: parseInt(offset),
-      search: search,
-      relationshipType: relationshipType,
+      search,
+      relationshipType,
     });
 
     res.json({
@@ -60,7 +60,7 @@ router.get('/', async (req, res) => {
 // GET /api/contacts/search - Search contacts
 router.get('/search', async (req, res) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user.userId;
     const { q } = req.query;
 
     if (!q || typeof q !== 'string') {
@@ -78,7 +78,7 @@ router.get('/search', async (req, res) => {
 // GET /api/contacts/:id - Get single contact with full details
 router.get('/:id', async (req, res) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user.userId;
     const { id } = req.params;
 
     const contact = await ContactService.getContactById(userId, id);
@@ -103,7 +103,7 @@ router.get('/:id', async (req, res) => {
 // POST /api/contacts - Create new contact
 router.post('/', async (req, res) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user.userId;
     const data = createContactSchema.parse(req.body);
 
     const contact = await ContactService.createContact(userId, data);
@@ -121,7 +121,7 @@ router.post('/', async (req, res) => {
 // PUT /api/contacts/:id - Update contact
 router.put('/:id', async (req, res) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user.userId;
     const { id } = req.params;
     const data = updateContactSchema.parse(req.body);
 
@@ -144,7 +144,7 @@ router.put('/:id', async (req, res) => {
 // DELETE /api/contacts/:id - Delete contact
 router.delete('/:id', async (req, res) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user.userId;
     const { id } = req.params;
 
     const deleted = await ContactService.deleteContact(userId, id);
@@ -163,7 +163,7 @@ router.delete('/:id', async (req, res) => {
 // GET /api/contacts/:id/interactions - Get contact's interaction history
 router.get('/:id/interactions', async (req, res) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user.userId;
     const { id } = req.params;
     const { limit = '50', offset = '0' } = req.query;
 
@@ -193,7 +193,7 @@ router.get('/:id/interactions', async (req, res) => {
 // GET /api/contacts/:id/timeline - Get unified timeline of all activity
 router.get('/:id/timeline', async (req, res) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user.userId;
     const { id } = req.params;
 
     // Verify contact belongs to user
@@ -248,4 +248,5 @@ router.get('/:id/timeline', async (req, res) => {
   }
 });
 
-export default router;
+module.exports = router;
+

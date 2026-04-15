@@ -5,10 +5,10 @@ const { ContactService } = require('./ContactService');
 
 
 class ClickUpService {
-  private static readonly BASE_URL = 'https://api.clickup.com/api/v2';
+  static BASE_URL = 'https://api.clickup.com/api/v2';
 
   // Get ClickUp API client
-  private static getClient(accessToken) {
+  static getClient(accessToken) {
     return axios.create({
       baseURL: this.BASE_URL,
       headers: {
@@ -19,7 +19,7 @@ class ClickUpService {
   }
 
   // Get stored ClickUp credentials
-  private static async getConfig(userId) {
+  static async getConfig(userId) {
     const result = await query(
       `SELECT access_token, metadata FROM platform_integrations 
        WHERE user_id = $1 AND platform = 'clickup' AND is_connected = true`,
@@ -43,8 +43,8 @@ class ClickUpService {
 
     const response = await axios.post('https://api.clickup.com/api/v2/oauth/token', null, {
       params: {
-        client_id: clientId,
-        client_secret: clientSecret,
+        client_id,
+        client_secret,
         code,
       },
     });
@@ -62,7 +62,7 @@ class ClickUpService {
   // Sync tasks from ClickUp
   static async syncTasks(
     userId,
-    options?: Date } = {}
+    options =  {}
   ) {
     const config = await this.getConfig(userId);
     const client = this.getClient(config.accessToken);
@@ -80,8 +80,8 @@ class ClickUpService {
         try {
           // Get tasks in list
           const params = {
-            archived: false,
-            subtasks: true,
+            archived,
+            subtasks,
           };
 
           if (options.sinceDate) {
@@ -115,7 +115,7 @@ class ClickUpService {
                 {
                   email,
                   username: assignee.username,
-                  rawData: assignee,
+                  rawData,
                 }
               );
 
@@ -232,7 +232,7 @@ class ClickUpService {
     const client = this.getClient(config.accessToken);
 
     const response = await client.post(`/task/${taskId}/comment`, {
-      comment_text: comment,
+      comment_text,
     });
     return response.data;
   }

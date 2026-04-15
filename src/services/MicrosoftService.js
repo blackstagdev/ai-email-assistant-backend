@@ -2,11 +2,9 @@ const axios = require('axios');
 const { query } = require('../db');
 const { ContactService } = require('./ContactService');
 
-
-
 class MicrosoftService {
-  private static readonly GRAPH_API_BASE = 'https://graph.microsoft.com/v1.0';
-  private static readonly AUTH_BASE = 'https://login.microsoftonline.com';
+  static GRAPH_API_BASE = 'https://graph.microsoft.com/v1.0';
+  static AUTH_BASE = 'https://login.microsoftonline.com';
 
   // Get authorization URL for OAuth flow
   static getAuthorizationUrl(state) {
@@ -27,11 +25,11 @@ class MicrosoftService {
     ].join(' ');
 
     const params = new URLSearchParams({
-      client_id: clientId!,
+      client_id: clientId,
       response_type: 'code',
-      redirect_uri: redirectUri!,
+      redirect_uri: redirectUri,
       scope: scopes,
-      state,
+      state: state,
       response_mode: 'query',
     });
 
@@ -46,10 +44,10 @@ class MicrosoftService {
     const tenantId = process.env.AZURE_TENANT_ID || 'common';
 
     const params = new URLSearchParams({
-      client_id: clientId!,
-      client_secret: clientSecret!,
-      code,
-      redirect_uri: redirectUri!,
+      client_id: clientId,
+      client_secret: clientSecret,
+      code: code,
+      redirect_uri: redirectUri,
       grant_type: 'authorization_code',
     });
 
@@ -67,7 +65,7 @@ class MicrosoftService {
     return {
       accessToken: response.data.access_token,
       refreshToken: response.data.refresh_token,
-      expiresAt,
+      expiresAt: expiresAt,
     };
   }
 
@@ -78,8 +76,8 @@ class MicrosoftService {
     const tenantId = process.env.AZURE_TENANT_ID || 'common';
 
     const params = new URLSearchParams({
-      client_id: clientId!,
-      client_secret: clientSecret!,
+      client_id: clientId,
+      client_secret: clientSecret,
       refresh_token: refreshToken,
       grant_type: 'refresh_token',
     });
@@ -98,7 +96,7 @@ class MicrosoftService {
     return {
       accessToken: response.data.access_token,
       refreshToken: response.data.refresh_token,
-      expiresAt,
+      expiresAt: expiresAt,
     };
   }
 
@@ -137,12 +135,9 @@ class MicrosoftService {
   }
 
   // Sync emails from Outlook
-  static async syncEmails(
-    userId,
-    options?: Date; maxResults?: number } = {}
-  ) {
+  static async syncEmails(userId, options = {}) {
     const accessToken = await this.getValidAccessToken(userId);
-    const { sinceDate, maxResults = 50 } = options;
+    const { sinceDate = null, maxResults = 50 } = options;
 
     let url = `${this.GRAPH_API_BASE}/me/messages?$top=${maxResults}&$orderby=receivedDateTime DESC`;
     
@@ -224,20 +219,11 @@ class MicrosoftService {
   }
 
   // Send email via Outlook
-  static async sendEmail(
-    userId,
-    to,
-    subject,
-    body,
-    options?: string[];
-      bcc?: string[];
-      attachments?: any[];
-    } = {}
-  ) {
+  static async sendEmail(userId, to, subject, body, options = {}) {
     const accessToken = await this.getValidAccessToken(userId);
 
     const message = {
-      subject,
+      subject: subject,
       body: {
         contentType: 'HTML',
         content: body,
@@ -245,17 +231,17 @@ class MicrosoftService {
       toRecipients: to.map(email => ({
         emailAddress: { address: email },
       })),
-      ccRecipients: options.cc?.map(email => ({
+      ccRecipients: (options.cc || []).map(email => ({
         emailAddress: { address: email },
-      })) || [],
-      bccRecipients: options.bcc?.map(email => ({
+      })),
+      bccRecipients: (options.bcc || []).map(email => ({
         emailAddress: { address: email },
-      })) || [],
+      })),
     };
 
     await axios.post(
       `${this.GRAPH_API_BASE}/me/sendMail`,
-      { message, saveToSentItems: true },
+      { message: message, saveToSentItems: true },
       {
         headers: {
           Authorization: `Bearer ${accessToken}`,
@@ -266,10 +252,7 @@ class MicrosoftService {
   }
 
   // List OneDrive files
-  static async listOneDriveFiles(
-    userId,
-    folderId?: string
-  ) {
+  static async listOneDriveFiles(userId, folderId = null) {
     const accessToken = await this.getValidAccessToken(userId);
 
     const url = folderId
@@ -284,9 +267,7 @@ class MicrosoftService {
   }
 
   // Search OneDrive files
-  static async searchOneDriveFiles(
-    userId,
-    searchQuery) {
+  static async searchOneDriveFiles(userId, searchQuery) {
     const accessToken = await this.getValidAccessToken(userId);
 
     const response = await axios.get(
@@ -300,9 +281,7 @@ class MicrosoftService {
   }
 
   // Get file download URL
-  static async getFileDownloadUrl(
-    userId,
-    fileId) {
+  static async getFileDownloadUrl(userId, fileId) {
     const accessToken = await this.getValidAccessToken(userId);
 
     const response = await axios.get(
@@ -316,17 +295,15 @@ class MicrosoftService {
   }
 
   // Create webhook subscription for new emails
-  static async createEmailWebhook(
-    userId,
-    callbackUrl) {
+  static async createEmailWebhook(userId, callbackUrl) {
     const accessToken = await this.getValidAccessToken(userId);
 
     const subscription = {
       changeType: 'created',
       notificationUrl: callbackUrl,
       resource: '/me/messages',
-      expirationDateTime: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 days max
-      clientState: userId, // For validation
+      expirationDateTime: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
+      clientState: 'secretClientValue',
     };
 
     const response = await axios.post(
@@ -343,6 +320,5 @@ class MicrosoftService {
     return response.data;
   }
 }
-
 
 module.exports = { MicrosoftService };

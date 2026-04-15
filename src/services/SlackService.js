@@ -5,10 +5,10 @@ const { ContactService } = require('./ContactService');
 
 
 class SlackService {
-  private static readonly BASE_URL = 'https://slack.com/api';
+  static BASE_URL = 'https://slack.com/api';
 
   // Get Slack API client
-  private static getClient(token) {
+  static getClient(token) {
     return axios.create({
       baseURL: this.BASE_URL,
       headers: {
@@ -19,7 +19,7 @@ class SlackService {
   }
 
   // Get stored Slack credentials
-  private static async getConfig(userId) {
+  static async getConfig(userId) {
     const result = await query(
       `SELECT access_token, metadata FROM platform_integrations 
        WHERE user_id = $1 AND platform = 'slack' AND is_connected = true`,
@@ -44,10 +44,10 @@ class SlackService {
 
     const response = await axios.post(`${this.BASE_URL}/oauth.v2.access`, null, {
       params: {
-        client_id: clientId,
-        client_secret: clientSecret,
+        client_id,
+        client_secret,
         code,
-        redirect_uri: redirectUri,
+        redirect_uri,
       },
     });
 
@@ -82,14 +82,14 @@ class SlackService {
   static async getConversationHistory(
     userId,
     channelId,
-    options?: string; latest?: string } = {}
+    options =  {}
   ) {
     const config = await this.getConfig(userId);
     const client = this.getClient(config.accessToken);
 
     const response = await client.get('/conversations.history', {
       params: {
-        channel: channelId,
+        channel,
         limit: 1000,
         ...options,
       },
@@ -101,7 +101,7 @@ class SlackService {
   // Sync Slack messages
   static async syncMessages(
     userId,
-    options?: string } = {}
+    options =  {}
   ) {
     const config = await this.getConfig(userId);
     const client = this.getClient(config.accessToken);
@@ -205,7 +205,7 @@ class SlackService {
     const client = this.getClient(config.accessToken);
 
     const response = await client.get('/search.messages', {
-      params: { query },
+      params,
     });
 
     return response.data.messages?.matches || [];
@@ -217,7 +217,7 @@ class SlackService {
     const client = this.getClient(config.accessToken);
 
     const response = await client.get('/users.lookupByEmail', {
-      params: { email },
+      params,
     });
 
     return response.data.user;

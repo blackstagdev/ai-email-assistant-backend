@@ -2,7 +2,7 @@ const { Router, Response } = require('express');
 const { AuthRequest, authMiddleware } = require('../middleware/auth');
 const { query } = require('../db');
 const { MicrosoftService } = require('../services/MicrosoftService');
-const { v4 as uuidv4 } = require('uuid');
+const { v4 : uuidv4 } = require('uuid');
 
 const router = Router();
 
@@ -12,7 +12,7 @@ router.use(authMiddleware);
 // GET /api/integrations - List all integrations and their connection status
 router.get('/', async (req, res) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user.userId;
 
     const result = await query(
       `SELECT platform, is_connected, platform_username, last_sync_at, created_at, updated_at
@@ -59,7 +59,7 @@ router.get('/', async (req, res) => {
 // GET /api/integrations/microsoft/connect - Initiate OAuth
 router.get('/microsoft/connect', async (req, res) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user.userId;
     const state = uuidv4(); // Used to prevent CSRF
 
     // Store state temporarily (in production, use Redis)
@@ -143,7 +143,7 @@ const axios = require('axios');
 // POST /api/integrations/microsoft/sync - Manually trigger sync
 router.post('/microsoft/sync', async (req, res) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user.userId;
 
     // Trigger email sync (last 7 days)
     const sinceDate = new Date();
@@ -169,7 +169,7 @@ router.post('/microsoft/sync', async (req, res) => {
 // DELETE /api/integrations/:platform - Disconnect integration
 router.delete('/:platform', async (req, res) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user.userId;
     const { platform } = req.params;
 
     await query(
@@ -189,7 +189,7 @@ router.delete('/:platform', async (req, res) => {
 // GET /api/integrations/microsoft/onedrive/files - List OneDrive files
 router.get('/microsoft/onedrive/files', async (req, res) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user.userId;
     const { folderId } = req.query;
 
     const files = await MicrosoftService.listOneDriveFiles(
@@ -206,7 +206,7 @@ router.get('/microsoft/onedrive/files', async (req, res) => {
 // GET /api/integrations/microsoft/onedrive/search - Search OneDrive files
 router.get('/microsoft/onedrive/search', async (req, res) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user.userId;
     const { q } = req.query;
 
     if (!q || typeof q !== 'string') {
@@ -222,4 +222,4 @@ router.get('/microsoft/onedrive/search', async (req, res) => {
   }
 });
 
-export default router;
+module.exports = router;

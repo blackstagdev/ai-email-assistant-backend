@@ -15,7 +15,7 @@ router.use(authMiddleware);
 // POST /api/integrations/shopify/connect - Connect Shopify store
 router.post('/shopify/connect', async (req, res) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user.userId;
     const schema = z.object({
       shopDomain: z.string(),
       accessToken: z.string(),
@@ -37,7 +37,7 @@ router.post('/shopify/connect', async (req, res) => {
         userId,
         'shopify',
         true,
-        JSON.stringify({ shop_domain: shopDomain, access_token: accessToken }),
+        JSON.stringify({ shop_domain, access_token}),
       ]
     );
 
@@ -51,7 +51,7 @@ router.post('/shopify/connect', async (req, res) => {
 // POST /api/integrations/shopify/sync - Sync Shopify data
 router.post('/shopify/sync', async (req, res) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user.userId;
 
     // Sync customers and orders
     await Promise.all([
@@ -79,7 +79,7 @@ router.post('/shopify/sync', async (req, res) => {
 // POST /api/integrations/gorgias/connect - Connect Gorgias
 router.post('/gorgias/connect', async (req, res) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user.userId;
     const schema = z.object({
       domain: z.string(),
       email: z.string().email(),
@@ -102,7 +102,7 @@ router.post('/gorgias/connect', async (req, res) => {
         userId,
         'gorgias',
         true,
-        JSON.stringify({ domain, email, api_key: apiKey }),
+        JSON.stringify({ domain, email, api_key}),
       ]
     );
 
@@ -116,7 +116,7 @@ router.post('/gorgias/connect', async (req, res) => {
 // POST /api/integrations/gorgias/sync - Sync Gorgias tickets
 router.post('/gorgias/sync', async (req, res) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user.userId;
 
     // Sync tickets from last 30 days
     const sinceDate = new Date();
@@ -142,7 +142,7 @@ router.post('/gorgias/sync', async (req, res) => {
 // GET /api/integrations/gorgias/satisfaction - Get satisfaction metrics
 router.get('/gorgias/satisfaction', async (req, res) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user.userId;
     const metrics = await GorgiasService.getSatisfactionMetrics(userId);
     res.json(metrics);
   } catch (error) {
@@ -156,7 +156,7 @@ router.get('/gorgias/satisfaction', async (req, res) => {
 // POST /api/integrations/shipstation/connect - Connect ShipStation
 router.post('/shipstation/connect', async (req, res) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user.userId;
     const schema = z.object({
       apiKey: z.string(),
       apiSecret: z.string(),
@@ -178,7 +178,7 @@ router.post('/shipstation/connect', async (req, res) => {
         userId,
         'shipstation',
         true,
-        JSON.stringify({ api_key: apiKey, api_secret: apiSecret }),
+        JSON.stringify({ api_key, api_secret}),
       ]
     );
 
@@ -192,7 +192,7 @@ router.post('/shipstation/connect', async (req, res) => {
 // POST /api/integrations/shipstation/sync - Sync ShipStation shipments
 router.post('/shipstation/sync', async (req, res) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user.userId;
 
     // Sync shipments from last 30 days
     const sinceDate = new Date();
@@ -218,7 +218,7 @@ router.post('/shipstation/sync', async (req, res) => {
 // GET /api/integrations/shipstation/tracking/:orderNumber - Get tracking info
 router.get('/shipstation/tracking/:orderNumber', async (req, res) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user.userId;
     const { orderNumber } = req.params;
 
     const shipment = await ShipStationService.getShipmentByOrder(userId, orderNumber);
@@ -268,7 +268,7 @@ router.get('/slack/callback', async (req, res) => {
     const tokens = await SlackService.exchangeCodeForTokens(code);
 
     // Get user ID from state (you'd need to implement state management)
-    const userId = req.user!.userId;
+    const userId = req.user.userId;
 
     // Store integration
     await query(
@@ -306,7 +306,7 @@ router.get('/slack/callback', async (req, res) => {
 // POST /api/integrations/slack/sync - Sync Slack messages
 router.post('/slack/sync', async (req, res) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user.userId;
 
     await SlackService.syncMessages(userId);
 
@@ -328,7 +328,7 @@ router.post('/slack/sync', async (req, res) => {
 // POST /api/integrations/slack/send - Send Slack message
 router.post('/slack/send', async (req, res) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user.userId;
     const schema = z.object({
       channel: z.string(),
       text: z.string(),
@@ -344,4 +344,5 @@ router.post('/slack/send', async (req, res) => {
   }
 });
 
-export default router;
+module.exports = router;
+

@@ -3,11 +3,9 @@ const { query } = require('../db');
 const { ContactService } = require('./ContactService');
 const { AIService } = require('./AIService');
 
-
-
 class GorgiasService {
   // Get Gorgias API client
-  private static getClient(config) {
+  static getClient(config) {
     const auth = Buffer.from(`${config.email}:${config.apiKey}`).toString('base64');
     
     return axios.create({
@@ -20,7 +18,7 @@ class GorgiasService {
   }
 
   // Get stored Gorgias credentials
-  private static async getConfig(userId) {
+  static async getConfig(userId) {
     const result = await query(
       `SELECT metadata FROM platform_integrations 
        WHERE user_id = $1 AND platform = 'gorgias' AND is_connected = true`,
@@ -40,16 +38,13 @@ class GorgiasService {
   }
 
   // Sync tickets from Gorgias
-  static async syncTickets(
-    userId,
-    options?: Date; limit?: number } = {}
-  ) {
+  static async syncTickets(userId, options = {}) {
     const config = await this.getConfig(userId);
     const client = this.getClient(config);
 
-    const { sinceDate, limit = 100 } = options;
+    const { sinceDate = null, limit = 100 } = options;
 
-    let params = { limit };
+    let params = { limit: limit };
     
     if (sinceDate) {
       params.updated_datetime = `>${sinceDate.toISOString()}`;
@@ -195,10 +190,7 @@ class GorgiasService {
   }
 
   // Send message to ticket
-  static async sendTicketMessage(
-    userId,
-    ticketId,
-    message) {
+  static async sendTicketMessage(userId, ticketId, message) {
     const config = await this.getConfig(userId);
     const client = this.getClient(config);
 
@@ -214,25 +206,18 @@ class GorgiasService {
   }
 
   // Update ticket status
-  static async updateTicketStatus(
-    userId,
-    ticketId,
-    status'open' | 'closed' | 'pending'
-  ) {
+  static async updateTicketStatus(userId, ticketId, status) {
     const config = await this.getConfig(userId);
     const client = this.getClient(config);
 
-    const payload = { status };
+    const payload = { status: status };
 
     const response = await client.put(`/tickets/${ticketId}`, payload);
     return response.data;
   }
 
   // Create Gorgias webhook
-  static async createWebhook(
-    userId,
-    event,
-    callbackUrl) {
+  static async createWebhook(userId, event, callbackUrl) {
     const config = await this.getConfig(userId);
     const client = this.getClient(config);
 
@@ -283,6 +268,5 @@ class GorgiasService {
     return result.rows[0];
   }
 }
-
 
 module.exports = { GorgiasService };

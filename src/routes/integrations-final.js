@@ -36,7 +36,7 @@ router.get('/clickup/callback', async (req, res) => {
     }
 
     const tokens = await ClickUpService.exchangeCodeForTokens(code);
-    const userId = req.user!.userId;
+    const userId = req.user.userId;
 
     // Get teams
     const teams = await ClickUpService.getTeams(tokens.access_token);
@@ -53,7 +53,7 @@ router.get('/clickup/callback', async (req, res) => {
         access_token = EXCLUDED.access_token,
         metadata = EXCLUDED.metadata,
         updated_at = CURRENT_TIMESTAMP`,
-      [userId, 'clickup', true, tokens.access_token, JSON.stringify({ team_id: teamId })]
+      [userId, 'clickup', true, tokens.access_token, JSON.stringify({ team_id})]
     );
 
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
@@ -68,7 +68,7 @@ router.get('/clickup/callback', async (req, res) => {
 // POST /api/integrations/clickup/sync - Sync ClickUp tasks
 router.post('/clickup/sync', async (req, res) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user.userId;
     await ClickUpService.syncTasks(userId);
 
     await query(
@@ -92,7 +92,7 @@ router.get('/gohighlevel/connect', async (req, res) => {
     const clientId = process.env.GHL_CLIENT_ID;
     const redirectUri = process.env.GHL_REDIRECT_URI || 'http://localhost:3000/api/integrations/gohighlevel/callback';
     
-    const authUrl = `https://marketplace.gohighlevel.com/oauth/chooselocation?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=contacts.readonly conversations.readonly opportunities.readonly`;
+    const authUrl = `https://marketplace.gohighlevel.com/oauth/chooselocation?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=contacts.conversations.opportunities.readonly`;
 
     res.json({ authUrl });
   } catch (error) {
@@ -104,7 +104,7 @@ router.get('/gohighlevel/connect', async (req, res) => {
 // POST /api/integrations/gohighlevel/sync - Sync GHL data
 router.post('/gohighlevel/sync', async (req, res) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user.userId;
 
     await Promise.all([
       GoHighLevelService.syncContacts(userId),
@@ -146,7 +146,7 @@ router.get('/quickbooks/connect', async (req, res) => {
 // POST /api/integrations/quickbooks/sync - Sync QuickBooks data
 router.post('/quickbooks/sync', async (req, res) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user.userId;
 
     await Promise.all([
       QuickBooksService.syncCustomers(userId),
@@ -172,7 +172,7 @@ router.post('/quickbooks/sync', async (req, res) => {
 // POST /api/integrations/google-ads/sync - Sync Google Ads conversions
 router.post('/google-ads/sync', async (req, res) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user.userId;
     await GoogleAdsService.syncConversions(userId);
 
     await query(
@@ -191,9 +191,9 @@ router.post('/google-ads/sync', async (req, res) => {
 // GET /api/integrations/google-ads/performance - Get campaign performance
 router.get('/google-ads/performance', async (req, res) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user.userId;
     const performance = await GoogleAdsService.getCampaignPerformance(userId);
-    res.json({ campaigns: performance });
+    res.json({ campaigns});
   } catch (error) {
     console.error('Error fetching Google Ads performance:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -205,7 +205,7 @@ router.get('/google-ads/performance', async (req, res) => {
 // POST /api/integrations/meta/sync - Sync Meta Ads leads
 router.post('/meta/sync', async (req, res) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user.userId;
     await MetaAdsService.syncLeads(userId);
 
     await query(
@@ -224,9 +224,9 @@ router.post('/meta/sync', async (req, res) => {
 // GET /api/integrations/meta/performance - Get campaign performance
 router.get('/meta/performance', async (req, res) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user.userId;
     const performance = await MetaAdsService.getCampaignPerformance(userId);
-    res.json({ campaigns: performance });
+    res.json({ campaigns});
   } catch (error) {
     console.error('Error fetching Meta Ads performance:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -236,7 +236,7 @@ router.get('/meta/performance', async (req, res) => {
 // GET /api/integrations/meta/insights - Get account insights
 router.get('/meta/insights', async (req, res) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user.userId;
     const insights = await MetaAdsService.getAccountInsights(userId);
     res.json(insights);
   } catch (error) {
@@ -250,7 +250,7 @@ router.get('/meta/insights', async (req, res) => {
 // POST /api/integrations/google-analytics/sync - Sync GA data
 router.post('/google-analytics/sync', async (req, res) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user.userId;
     await GoogleAnalyticsService.storeAttributionData(userId);
 
     await query(
@@ -269,7 +269,7 @@ router.post('/google-analytics/sync', async (req, res) => {
 // GET /api/integrations/google-analytics/traffic - Get traffic data
 router.get('/google-analytics/traffic', async (req, res) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user.userId;
     const traffic = await GoogleAnalyticsService.getTrafficData(userId);
     res.json(traffic);
   } catch (error) {
@@ -278,4 +278,4 @@ router.get('/google-analytics/traffic', async (req, res) => {
   }
 });
 
-export default router;
+module.exports = router;

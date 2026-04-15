@@ -7,11 +7,11 @@ const { ContactService } = require('./ContactService');
 
 
 class GoogleAdsService {
-  private static readonly API_VERSION = 'v15';
-  private static readonly BASE_URL = `https://googleads.googleapis.com/${this.API_VERSION}`;
+  static API_VERSION = 'v15';
+  static BASE_URL = `https://googleads.googleapis.com/${this.API_VERSION}`;
 
   // Get stored Google Ads credentials
-  private static async getConfig(userId) {
+  static async getConfig(userId) {
     const result = await query(
       `SELECT access_token, refresh_token, metadata 
        FROM platform_integrations 
@@ -32,7 +32,7 @@ class GoogleAdsService {
   }
 
   // Get Google Ads API client
-  private static getClient(config) {
+  static getClient(config) {
     return axios.create({
       baseURL: this.BASE_URL,
       headers: {
@@ -91,8 +91,8 @@ class GoogleAdsService {
             'google_ads_conversion',
             JSON.stringify({
               gclid,
-              campaign: campaignName,
-              conversion_value: conversionValue,
+              campaign,
+              conversion_value,
               conversion_action: result.segments?.conversionActionName,
             }),
             new Date(date),
@@ -138,10 +138,10 @@ class GoogleAdsService {
 
 
 class MetaAdsService {
-  private static readonly BASE_URL = 'https://graph.facebook.com/v18.0';
+  static BASE_URL = 'https://graph.facebook.com/v18.0';
 
   // Get stored Meta Ads credentials
-  private static async getConfig(userId) {
+  static async getConfig(userId) {
     const result = await query(
       `SELECT access_token, metadata 
        FROM platform_integrations 
@@ -160,7 +160,7 @@ class MetaAdsService {
   }
 
   // Get Meta API client
-  private static getClient(accessToken) {
+  static getClient(accessToken) {
     return axios.create({
       baseURL: this.BASE_URL,
       headers: {
@@ -192,10 +192,10 @@ class MetaAdsService {
         for (const lead of leads) {
           // Extract email and name from field_data
           const fieldData = lead.field_data || [];
-          const emailField = fieldData.find((f: any) => f.name === 'email');
-          const firstNameField = fieldData.find((f: any) => f.name === 'first_name');
-          const lastNameField = fieldData.find((f: any) => f.name === 'last_name');
-          const phoneField = fieldData.find((f: any) => f.name === 'phone');
+          const emailField = fieldData.find((f) => f.name === 'email');
+          const firstNameField = fieldData.find((f) => f.name === 'first_name');
+          const lastNameField = fieldData.find((f) => f.name === 'last_name');
+          const phoneField = fieldData.find((f) => f.name === 'phone');
 
           if (!emailField?.values?.[0]) continue;
 
@@ -287,10 +287,10 @@ class MetaAdsService {
 
 
 class GoogleAnalyticsService {
-  private static readonly BASE_URL = 'https://analyticsdata.googleapis.com/v1beta';
+  static BASE_URL = 'https://analyticsdata.googleapis.com/v1beta';
 
   // Get stored GA credentials
-  private static async getConfig(userId) {
+  static async getConfig(userId) {
     const result = await query(
       `SELECT access_token, metadata 
        FROM platform_integrations 
@@ -309,7 +309,7 @@ class GoogleAnalyticsService {
   }
 
   // Get GA API client
-  private static getClient(accessToken) {
+  static getClient(accessToken) {
     return axios.create({
       baseURL: this.BASE_URL,
       headers: {

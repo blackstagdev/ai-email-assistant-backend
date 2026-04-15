@@ -1,5 +1,5 @@
-const { Router, Response } = require('express');
-const { AuthRequest, authMiddleware } = require('../middleware/auth');
+const { Router } = require('express');
+const { authMiddleware } = require('../middleware/auth');
 const { AnalyticsService } = require('../services/AnalyticsService');
 
 const router = Router();
@@ -8,12 +8,12 @@ router.use(authMiddleware);
 // GET /api/analytics/dashboard - Get all dashboard metrics
 router.get('/dashboard', async (req, res) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user.userId;
     const { timeRange = 'month' } = req.query;
 
     const metrics = await AnalyticsService.getDashboardMetrics(
       userId,
-      timeRange as 'day' | 'week' | 'month' | 'year'
+      timeRange
     );
 
     res.json(metrics);
@@ -26,12 +26,12 @@ router.get('/dashboard', async (req, res) => {
 // GET /api/analytics/revenue - Get revenue analytics
 router.get('/revenue', async (req, res) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user.userId;
     const { timeRange = 'month' } = req.query;
 
     const analytics = await AnalyticsService.getRevenueAnalytics(
       userId,
-      timeRange as 'day' | 'week' | 'month' | 'year'
+      timeRange
     );
 
     res.json(analytics);
@@ -44,12 +44,12 @@ router.get('/revenue', async (req, res) => {
 // GET /api/analytics/interactions - Get interaction metrics
 router.get('/interactions', async (req, res) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user.userId;
     const { timeRange = 'month' } = req.query;
 
     const analytics = await AnalyticsService.getInteractionAnalytics(
       userId,
-      timeRange as 'day' | 'week' | 'month' | 'year'
+      timeRange
     );
 
     res.json(analytics);
@@ -62,12 +62,12 @@ router.get('/interactions', async (req, res) => {
 // GET /api/analytics/contacts/growth - Get contact growth metrics
 router.get('/contacts/growth', async (req, res) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user.userId;
     const { timeRange = 'month' } = req.query;
 
     const analytics = await AnalyticsService.getContactGrowth(
       userId,
-      timeRange as 'day' | 'week' | 'month' | 'year'
+      timeRange
     );
 
     res.json(analytics);
@@ -80,7 +80,7 @@ router.get('/contacts/growth', async (req, res) => {
 // GET /api/analytics/marketing - Get marketing attribution
 router.get('/marketing', async (req, res) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user.userId;
 
     const analytics = await AnalyticsService.getMarketingAttribution(userId);
 
@@ -91,4 +91,4 @@ router.get('/marketing', async (req, res) => {
   }
 });
 
-export default router;
+module.exports = router;

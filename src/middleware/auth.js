@@ -9,22 +9,22 @@ const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
 
 
 
-const hashPassword = async (password): Promise<string> => {
+const hashPassword = async (password) => {
   const salt = await bcrypt.genSalt(10);
   return bcrypt.hash(password, salt);
 };
 
 const comparePassword = async (
   password,
-  hashedPassword): Promise<boolean> => {
+  hashedPassword) => {
   return bcrypt.compare(password, hashedPassword);
 };
 
-const generateToken = (payload): string => {
+const generateToken = (payload) => {
   return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
 };
 
-const verifyToken = (token): JWTPayload => {
+const verifyToken = (token) => {
   return jwt.verify(token, JWT_SECRET);
 };
 

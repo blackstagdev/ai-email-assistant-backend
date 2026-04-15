@@ -1,5 +1,5 @@
-const { Router, Response } = require('express');
-const { AuthRequest, authMiddleware } = require('../middleware/auth');
+const { Router } = require('express');
+const { authMiddleware } = require('../middleware/auth');
 const { AIService } = require('../services/AIService');
 const { query } = require('../db');
 const { z } = require('zod');
@@ -13,6 +13,7 @@ const generateDraftSchema = z.object({
   originalMessageId: z.string().uuid().optional(),
   userPrompt: z.string().optional(),
   tone: z.enum(['professional', 'casual', 'friendly', 'formal']).optional(),
+  apiKey: z.string().optional(), // Added API key field
 });
 
 const approveDraftSchema = z.object({
@@ -26,12 +27,13 @@ const rejectDraftSchema = z.object({
 const rewriteDraftSchema = z.object({
   feedback: z.string(),
   tone: z.enum(['professional', 'casual', 'friendly', 'formal']).optional(),
+  apiKey: z.string().optional(), // Added API key field
 });
 
 // GET /api/drafts - List all draft emails
 router.get('/', async (req, res) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user.userId;
     const { status = 'pending', limit = '50', offset = '0' } = req.query;
 
     const result = await query(
@@ -54,7 +56,7 @@ router.get('/', async (req, res) => {
 // GET /api/drafts/:id - Get single draft
 router.get('/:id', async (req, res) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user.userId;
     const { id } = req.params;
 
     const result = await query(
@@ -79,16 +81,20 @@ router.get('/:id', async (req, res) => {
 // POST /api/drafts/generate - Generate new AI draft
 router.post('/generate', async (req, res) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user.userId;
     const data = generateDraftSchema.parse(req.body);
 
-    // Generate draft using AI
-    const draft = await AIService.generateEmailDraft(userId, {
-      contactId: data.contactId,
-      originalMessageId: data.originalMessageId,
-      userPrompt: data.userPrompt,
-      tone: data.tone,
-    });
+    // Generate draft using AI (with optional API key from frontend)
+    const draft = await AIService.generateEmailDraft(
+      userId,
+      {
+        contactId: data.contactId,
+        originalMessageId: data.originalMessageId,
+        userPrompt: data.userPrompt,
+        tone: data.tone,
+      },
+      data.apiKey // Pass API key from frontend
+    );
 
     // Save draft to database
     const result = await query(
@@ -129,7 +135,7 @@ router.post('/generate', async (req, res) => {
 // PUT /api/drafts/:id/approve - Approve draft (optionally with edits)
 router.put('/:id/approve', async (req, res) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user.userId;
     const { id } = req.params;
     const { edits } = approveDraftSchema.parse(req.body);
 
@@ -161,7 +167,7 @@ router.put('/:id/approve', async (req, res) => {
 // PUT /api/drafts/:id/reject - Reject draft with feedback
 router.put('/:id/reject', async (req, res) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user.userId;
     const { id } = req.params;
     const { feedback } = rejectDraftSchema.parse(req.body);
 
@@ -192,9 +198,9 @@ router.put('/:id/reject', async (req, res) => {
 // POST /api/drafts/:id/rewrite - Request AI to rewrite with feedback
 router.post('/:id/rewrite', async (req, res) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user.userId;
     const { id } = req.params;
-    const { feedback, tone } = rewriteDraftSchema.parse(req.body);
+    const { feedback, tone, apiKey } = rewriteDraftSchema.parse(req.body);
 
     // Get original draft
     const originalResult = await query(
@@ -208,13 +214,17 @@ router.post('/:id/rewrite', async (req, res) => {
 
     const originalDraft = originalResult.rows[0];
 
-    // Generate new draft with feedback incorporated
-    const newDraft = await AIService.generateEmailDraft(userId, {
-      contactId: originalDraft.contact_id,
-      originalMessageId: originalDraft.original_message_id,
-      userPrompt: `Previous draft feedback: ${feedback}\n\nOriginal draft:\n${originalDraft.draft_content}`,
-      tone,
-    });
+    // Generate new draft with feedback incorporated (with optional API key)
+    const newDraft = await AIService.generateEmailDraft(
+      userId,
+      {
+        contactId: originalDraft.contact_id,
+        originalMessageId: originalDraft.original_message_id,
+        userPrompt: `Previous draft feedback: ${feedback}\n\nOriginal draft:\n${originalDraft.draft_content}`,
+        tone: tone,
+      },
+      apiKey // Pass API key from frontend
+    );
 
     // Update draft with new content
     const result = await query(
@@ -231,8 +241,8 @@ router.post('/:id/rewrite', async (req, res) => {
         newDraft.subject,
         feedback,
         JSON.stringify({
-          tone,
-          feedback,
+          tone: tone,
+          feedback: feedback,
           reasoning: newDraft.reasoning,
           suggestedAttachments: newDraft.suggestedAttachments,
         }),
@@ -258,7 +268,7 @@ router.post('/:id/rewrite', async (req, res) => {
 // POST /api/drafts/:id/send - Send approved draft via email
 router.post('/:id/send', async (req, res) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user.userId;
     const { id } = req.params;
 
     // Get draft
@@ -277,7 +287,7 @@ router.post('/:id/send', async (req, res) => {
     const draft = draftResult.rows[0];
 
     // Use Microsoft Service to send email
-    const { MicrosoftService } = await import('../services/MicrosoftService');
+    const { MicrosoftService } = require('../services/MicrosoftService');
     
     const finalBody = draft.user_edits || draft.draft_content;
 
@@ -317,7 +327,7 @@ router.post('/:id/send', async (req, res) => {
 // DELETE /api/drafts/:id - Delete draft
 router.delete('/:id', async (req, res) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user.userId;
     const { id } = req.params;
 
     const result = await query(
@@ -325,7 +335,7 @@ router.delete('/:id', async (req, res) => {
       [id, userId]
     );
 
-    if (result.rowCount === 0) {
+    if ((result.rowCount ?? 0) === 0) {
       return res.status(404).json({ error: 'Draft not found' });
     }
 
@@ -336,4 +346,4 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
-export default router;
+module.exports = router;

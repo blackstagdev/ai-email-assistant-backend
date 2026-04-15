@@ -5,10 +5,10 @@ const { ContactService } = require('./ContactService');
 
 
 class GoHighLevelService {
-  private static readonly BASE_URL = 'https://services.leadconnectorhq.com';
+  static BASE_URL = 'https://services.leadconnectorhq.com';
 
   // Get GHL API client
-  private static getClient(accessToken) {
+  static getClient(accessToken) {
     return axios.create({
       baseURL: this.BASE_URL,
       headers: {
@@ -20,7 +20,7 @@ class GoHighLevelService {
   }
 
   // Get stored GHL credentials
-  private static async getConfig(userId) {
+  static async getConfig(userId) {
     const result = await query(
       `SELECT access_token, metadata FROM platform_integrations 
        WHERE user_id = $1 AND platform = 'gohighlevel' AND is_connected = true`,
@@ -43,8 +43,8 @@ class GoHighLevelService {
     const clientSecret = process.env.GHL_CLIENT_SECRET;
 
     const response = await axios.post('https://services.leadconnectorhq.com/oauth/token', {
-      client_id: clientId,
-      client_secret: clientSecret,
+      client_id,
+      client_secret,
       grant_type: 'authorization_code',
       code,
     });

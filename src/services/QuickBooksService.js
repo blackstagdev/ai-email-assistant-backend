@@ -2,14 +2,12 @@ const axios = require('axios');
 const { query } = require('../db');
 const { ContactService } = require('./ContactService');
 
-
-
 class QuickBooksService {
-  private static readonly BASE_URL = 'https://quickbooks.api.intuit.com/v3/company';
-  private static readonly AUTH_URL = 'https://oauth.platform.intuit.com/oauth2/v1';
+  static BASE_URL = 'https://quickbooks.api.intuit.com/v3/company';
+  static AUTH_URL = 'https://oauth.platform.intuit.com/oauth2/v1';
 
   // Get QuickBooks API client
-  private static getClient(accessToken, realmId) {
+  static getClient(accessToken, realmId) {
     return axios.create({
       baseURL: `${this.BASE_URL}/${realmId}`,
       headers: {
@@ -21,7 +19,7 @@ class QuickBooksService {
   }
 
   // Get stored QuickBooks credentials
-  private static async getConfig(userId) {
+  static async getConfig(userId) {
     const result = await query(
       `SELECT access_token, refresh_token, metadata, token_expires_at 
        FROM platform_integrations 
@@ -42,7 +40,7 @@ class QuickBooksService {
   }
 
   // Refresh access token
-  private static async refreshAccessToken(userId, refreshToken) {
+  static async refreshAccessToken(userId, refreshToken) {
     const clientId = process.env.QUICKBOOKS_CLIENT_ID;
     const clientSecret = process.env.QUICKBOOKS_CLIENT_SECRET;
     
@@ -72,7 +70,7 @@ class QuickBooksService {
   }
 
   // Get valid access token
-  private static async getValidAccessToken(userId) {
+  static async getValidAccessToken(userId) {
     const config = await this.getConfig(userId);
 
     // Refresh if expired or expires in < 10 minutes
@@ -95,9 +93,9 @@ class QuickBooksService {
     let hasMore = true;
 
     while (hasMore) {
-      const query = `SELECT * FROM Customer STARTPOSITION ${startPosition} MAXRESULTS ${maxResults}`;
+      const queryText = `SELECT * FROM Customer STARTPOSITION ${startPosition} MAXRESULTS ${maxResults}`;
       const response = await client.get('/query', {
-        params: { query, minorversion: 65 },
+        params: { query: queryText, minorversion: 65 },
       });
 
       const customers = response.data.QueryResponse?.Customer || [];
@@ -125,7 +123,7 @@ class QuickBooksService {
             'quickbooks',
             customer.Id,
             {
-              email,
+              email: email,
               rawData: {
                 displayName: customer.DisplayName,
                 balance: customer.Balance,
@@ -171,9 +169,9 @@ class QuickBooksService {
     let hasMore = true;
 
     while (hasMore) {
-      const query = `SELECT * FROM Invoice STARTPOSITION ${startPosition} MAXRESULTS ${maxResults}`;
+      const queryText = `SELECT * FROM Invoice STARTPOSITION ${startPosition} MAXRESULTS ${maxResults}`;
       const response = await client.get('/query', {
-        params: { query, minorversion: 65 },
+        params: { query: queryText, minorversion: 65 },
       });
 
       const invoices = response.data.QueryResponse?.Invoice || [];
@@ -236,9 +234,9 @@ class QuickBooksService {
     const { token, realmId } = await this.getValidAccessToken(userId);
     const client = this.getClient(token, realmId);
 
-    const query = `SELECT * FROM Payment WHERE TxnDate >= '2024-01-01' MAXRESULTS 1000`;
+    const queryText = `SELECT * FROM Payment WHERE TxnDate >= '2024-01-01' MAXRESULTS 1000`;
     const response = await client.get('/query', {
-      params: { query, minorversion: 65 },
+      params: { query: queryText, minorversion: 65 },
     });
 
     const payments = response.data.QueryResponse?.Payment || [];
@@ -278,9 +276,7 @@ class QuickBooksService {
   }
 
   // Create invoice
-  static async createInvoice(
-    userId,
-    invoiceData) {
+  static async createInvoice(userId, invoiceData) {
     const { token, realmId } = await this.getValidAccessToken(userId);
     const client = this.getClient(token, realmId);
 
@@ -292,9 +288,7 @@ class QuickBooksService {
   }
 
   // Get customer balance
-  static async getCustomerBalance(
-    userId,
-    customerId) {
+  static async getCustomerBalance(userId, customerId) {
     const { token, realmId } = await this.getValidAccessToken(userId);
     const client = this.getClient(token, realmId);
 
@@ -305,6 +299,5 @@ class QuickBooksService {
     return parseFloat(response.data.Customer.Balance || 0);
   }
 }
-
 
 module.exports = { QuickBooksService };

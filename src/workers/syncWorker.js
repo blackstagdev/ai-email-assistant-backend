@@ -14,7 +14,7 @@ const { query } = require('../db');
 const connection = new IORedis({
   host: process.env.REDIS_HOST || 'localhost',
   port: parseInt(process.env.REDIS_PORT || '6379'),
-  maxRetriesPerRequest: null,
+  maxRetriesPerRequest,
 });
 
 // Create job queues
@@ -26,7 +26,7 @@ const syncQueue = new Queue('platform-sync', { connection });
 // Worker to process sync jobs
 const syncWorker = new Worker(
   'platform-sync',
-  async (job: Job) => {
+  async (job) => {
     const { userId, platform, sinceDate } = job.data;
 
     console.log(`Processing sync job for user ${userId}, platform: ${platform}`);
@@ -137,7 +137,7 @@ syncWorker.on('failed', (job, err) => {
 async function scheduleSyncJob(
   userId,
   platform,
-  options?: Date; delay?: number } = {}
+  options?: Date; delay? } = {}
 ) {
   await syncQueue.add(
     'sync',
@@ -190,7 +190,7 @@ async function scheduleRecurringSyncs() {
 // Start scheduling recurring syncs when worker starts
 scheduleRecurringSyncs().catch(console.error);
 
-export default syncWorker;
+module.exports = syncWorker;
 
 
 module.exports = { syncQueue, scheduleSyncJob, scheduleRecurringSyncs };

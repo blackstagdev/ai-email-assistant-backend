@@ -302,7 +302,7 @@ if (require.main === module) {
     .catch(() => process.exit(1));
 }
 
-export default runMigrations;
+module.exports = runMigrations;
 
 
 module.exports = { runMigrations };

@@ -5,10 +5,10 @@ const { ContactService } = require('./ContactService');
 
 
 class ShopifyService {
-  private static readonly API_VERSION = '2024-01';
+  static API_VERSION = '2024-01';
 
   // Get Shopify API client
-  private static getClient(config) {
+  static getClient(config) {
     return axios.create({
       baseURL: `https://${config.shopDomain}/admin/api/${this.API_VERSION}`,
       headers: {
@@ -19,7 +19,7 @@ class ShopifyService {
   }
 
   // Get stored Shopify credentials
-  private static async getConfig(userId) {
+  static async getConfig(userId) {
     const result = await query(
       `SELECT metadata FROM platform_integrations 
        WHERE user_id = $1 AND platform = 'shopify' AND is_connected = true`,
@@ -38,7 +38,7 @@ class ShopifyService {
   }
 
   // Sync customers from Shopify
-  static async syncCustomers(userId, options?: Date } = {}) {
+  static async syncCustomers(userId, options = {}) {
     const config = await this.getConfig(userId);
     const client = this.getClient(config);
 
@@ -66,7 +66,7 @@ class ShopifyService {
             firstName: customer.first_name,
             lastName: customer.last_name,
             phone: customer.phone,
-            tags: customer.tags ? customer.tags.split(',').map((t: string) => t.trim()) : [],
+            tags: customer.tags ? customer.tags.split(',').map((t) => t.trim()) : [],
           });
 
           // Link Shopify identity
@@ -121,7 +121,7 @@ class ShopifyService {
   }
 
   // Sync orders from Shopify
-  static async syncOrders(userId, options?: Date } = {}) {
+  static async syncOrders(userId, options = {}) {
     const config = await this.getConfig(userId);
     const client = this.getClient(config);
 
@@ -174,7 +174,7 @@ class ShopifyService {
               new Date(order.created_at),
               parseFloat(order.total_price),
               JSON.stringify(
-                order.line_items.map((item: any) => ({
+                order.line_items.map((item) => ({
                   name: item.name,
                   quantity: item.quantity,
                   price: item.price,
@@ -237,7 +237,7 @@ class ShopifyService {
     const webhook = {
       webhook: {
         topic,
-        address: callbackUrl,
+        address,
         format: 'json',
       },
     };
