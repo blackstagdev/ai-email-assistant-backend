@@ -6,7 +6,7 @@ const router = Router();
 router.use(authMiddleware);
 
 // GET /api/analytics/dashboard - Get all dashboard metrics
-router.get('/dashboard', async (req: AuthRequest, res: Response) => {
+router.get('/dashboard', async (req, res) => {
   try {
     const userId = req.user!.userId;
     const { timeRange = 'month' } = req.query;
@@ -24,7 +24,7 @@ router.get('/dashboard', async (req: AuthRequest, res: Response) => {
 });
 
 // GET /api/analytics/revenue - Get revenue analytics
-router.get('/revenue', async (req: AuthRequest, res: Response) => {
+router.get('/revenue', async (req, res) => {
   try {
     const userId = req.user!.userId;
     const { timeRange = 'month' } = req.query;
@@ -42,7 +42,7 @@ router.get('/revenue', async (req: AuthRequest, res: Response) => {
 });
 
 // GET /api/analytics/interactions - Get interaction metrics
-router.get('/interactions', async (req: AuthRequest, res: Response) => {
+router.get('/interactions', async (req, res) => {
   try {
     const userId = req.user!.userId;
     const { timeRange = 'month' } = req.query;
@@ -60,7 +60,7 @@ router.get('/interactions', async (req: AuthRequest, res: Response) => {
 });
 
 // GET /api/analytics/contacts/growth - Get contact growth metrics
-router.get('/contacts/growth', async (req: AuthRequest, res: Response) => {
+router.get('/contacts/growth', async (req, res) => {
   try {
     const userId = req.user!.userId;
     const { timeRange = 'month' } = req.query;
@@ -78,7 +78,7 @@ router.get('/contacts/growth', async (req: AuthRequest, res: Response) => {
 });
 
 // GET /api/analytics/marketing - Get marketing attribution
-router.get('/marketing', async (req: AuthRequest, res: Response) => {
+router.get('/marketing', async (req, res) => {
   try {
     const userId = req.user!.userId;
 

@@ -33,7 +33,7 @@ app.use((req, res, next) => {
 });
 
 // Health check
-app.get('/health', (req: Request, res: Response) => {
+app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
@@ -48,12 +48,12 @@ app.use('/api/analytics', analyticsRoutes);
 app.use('/api/chat', chatRoutes);
 
 // 404 handler
-app.use((req: Request, res: Response) => {
+app.use((req, res) => {
   res.status(404).json({ error: 'Route not found' });
 });
 
 // Error handler
-app.use((err: any, req: Request, res: Response, next: any) => {
+app.use((err: any, req, res, next: any) => {
   console.error('Error:', err);
   res.status(500).json({
     error: 'Internal server error',

@@ -29,9 +29,9 @@ const verifyToken = (token): JWTPayload => {
 };
 
 const authMiddleware = async (
-  req: AuthRequest,
-  res: Response,
-  next: NextFunction
+  req,
+  res,
+  next
 ) => {
   try {
     const authHeader = req.headers.authorization;

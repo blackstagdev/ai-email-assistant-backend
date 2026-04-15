@@ -28,7 +28,7 @@ const updateContactSchema = createContactSchema.extend({
 }).partial();
 
 // GET /api/contacts - List all contacts with pagination and filtering
-router.get('/', async (req: AuthRequest, res: Response) => {
+router.get('/', async (req, res) => {
   try {
     const userId = req.user!.userId;
     const {
@@ -58,7 +58,7 @@ router.get('/', async (req: AuthRequest, res: Response) => {
 });
 
 // GET /api/contacts/search - Search contacts
-router.get('/search', async (req: AuthRequest, res: Response) => {
+router.get('/search', async (req, res) => {
   try {
     const userId = req.user!.userId;
     const { q } = req.query;
@@ -76,7 +76,7 @@ router.get('/search', async (req: AuthRequest, res: Response) => {
 });
 
 // GET /api/contacts/:id - Get single contact with full details
-router.get('/:id', async (req: AuthRequest, res: Response) => {
+router.get('/:id', async (req, res) => {
   try {
     const userId = req.user!.userId;
     const { id } = req.params;
@@ -101,7 +101,7 @@ router.get('/:id', async (req: AuthRequest, res: Response) => {
 });
 
 // POST /api/contacts - Create new contact
-router.post('/', async (req: AuthRequest, res: Response) => {
+router.post('/', async (req, res) => {
   try {
     const userId = req.user!.userId;
     const data = createContactSchema.parse(req.body);
@@ -119,7 +119,7 @@ router.post('/', async (req: AuthRequest, res: Response) => {
 });
 
 // PUT /api/contacts/:id - Update contact
-router.put('/:id', async (req: AuthRequest, res: Response) => {
+router.put('/:id', async (req, res) => {
   try {
     const userId = req.user!.userId;
     const { id } = req.params;
@@ -142,7 +142,7 @@ router.put('/:id', async (req: AuthRequest, res: Response) => {
 });
 
 // DELETE /api/contacts/:id - Delete contact
-router.delete('/:id', async (req: AuthRequest, res: Response) => {
+router.delete('/:id', async (req, res) => {
   try {
     const userId = req.user!.userId;
     const { id } = req.params;
@@ -161,7 +161,7 @@ router.delete('/:id', async (req: AuthRequest, res: Response) => {
 });
 
 // GET /api/contacts/:id/interactions - Get contact's interaction history
-router.get('/:id/interactions', async (req: AuthRequest, res: Response) => {
+router.get('/:id/interactions', async (req, res) => {
   try {
     const userId = req.user!.userId;
     const { id } = req.params;
@@ -191,7 +191,7 @@ router.get('/:id/interactions', async (req: AuthRequest, res: Response) => {
 });
 
 // GET /api/contacts/:id/timeline - Get unified timeline of all activity
-router.get('/:id/timeline', async (req: AuthRequest, res: Response) => {
+router.get('/:id/timeline', async (req, res) => {
   try {
     const userId = req.user!.userId;
     const { id } = req.params;

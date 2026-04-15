@@ -19,7 +19,7 @@ const chatMessageSchema = z.object({
 });
 
 // POST /api/chat - Send message to AI assistant
-router.post('/', async (req: AuthRequest, res: Response) => {
+router.post('/', async (req, res) => {
   try {
     const userId = req.user!.userId;
     const { message, conversationId } = chatMessageSchema.parse(req.body);
@@ -161,7 +161,7 @@ Be helpful, concise, and use the context provided to give relevant answers.`;
 });
 
 // GET /api/chat/history - Get chat conversation history
-router.get('/history', async (req: AuthRequest, res: Response) => {
+router.get('/history', async (req, res) => {
   try {
     const userId = req.user!.userId;
     const { conversationId } = req.query;
@@ -207,7 +207,7 @@ router.get('/history', async (req: AuthRequest, res: Response) => {
 });
 
 // POST /api/chat/search - Semantic search through interactions
-router.post('/search', async (req: AuthRequest, res: Response) => {
+router.post('/search', async (req, res) => {
   try {
     const userId = req.user!.userId;
     const { query: searchQuery } = req.body;
@@ -227,7 +227,7 @@ router.post('/search', async (req: AuthRequest, res: Response) => {
 });
 
 // DELETE /api/chat/:conversationId - Delete conversation
-router.delete('/:conversationId', async (req: AuthRequest, res: Response) => {
+router.delete('/:conversationId', async (req, res) => {
   try {
     const userId = req.user!.userId;
     const { conversationId } = req.params;
